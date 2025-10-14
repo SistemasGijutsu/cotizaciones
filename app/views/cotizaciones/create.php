@@ -84,17 +84,37 @@ $items_seleccionados = $items_seleccionados ?? [];
                                                     <!-- Los resultados se cargan aquí -->
                                                 </div>
                                                 
-                                                <!-- Info del cliente seleccionado -->
-                                                <div id="cliente_selected" class="mt-3 p-3 bg-gradient-primary text-white rounded d-none">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <i class="fas fa-user-check me-2"></i>
-                                                            <strong id="cliente_nombre_display"></strong>
-                                                            <small class="d-block opacity-75" id="cliente_info_display"></small>
+                                                <!-- Info del cliente seleccionado - TARJETA MEJORADA -->
+                                                <div id="cliente_selected" class="mt-4 d-none">
+                                                    <div class="card border-success shadow-sm">
+                                                        <div class="card-header bg-success text-white">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div class="d-flex align-items-center">
+                                                                    <i class="fas fa-check-circle me-2"></i>
+                                                                    <strong>Cliente Seleccionado</strong>
+                                                                </div>
+                                                                <button type="button" class="btn btn-sm btn-outline-light" onclick="limpiarClienteSeleccionado()" title="Cambiar cliente">
+                                                                    <i class="fas fa-exchange-alt"></i>
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <button type="button" class="btn btn-sm btn-outline-light" onclick="limpiarClienteSeleccionado()">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
+                                                        <div class="card-body">
+                                                            <div class="row align-items-center">
+                                                                <div class="col-auto">
+                                                                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                                        <i class="fas fa-user fa-2x"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col">
+                                                                    <h5 class="mb-1 text-success" id="cliente_nombre_display"></h5>
+                                                                    <p class="mb-1 text-muted" id="cliente_info_display"></p>
+                                                                    <small class="text-success">
+                                                                        <i class="fas fa-info-circle me-1"></i>
+                                                                        Ya puedes continuar con los demás campos de la cotización
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 
@@ -697,24 +717,55 @@ $('#cliente_search').on('focus', function() {
 
 // Función para buscar clientes via AJAX
 function buscarClientes(term) {
+    console.log('🔍 Buscando clientes con término:', term);
+    
     $.ajax({
         url: 'index.php?controller=cliente&action=search',
         method: 'GET',
         data: { term: term },
         dataType: 'json',
+        beforeSend: function() {
+            console.log('📡 Enviando petición AJAX...');
+        },
         success: function(clientes) {
+            console.log('✅ Respuesta recibida:', clientes);
+            console.log('📊 Número de clientes encontrados:', clientes.length);
+            
+            // Restaurar icono de búsqueda
+            $('.input-group-text i').removeClass('fa-spinner fa-spin').addClass('fa-search');
+            
             mostrarResultadosClientes(clientes, term);
         },
         error: function(xhr, status, error) {
-            console.error('Error al buscar clientes:', error);
+            console.error('❌ Error al buscar clientes:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+            
+            // Restaurar icono de búsqueda
+            $('.input-group-text i').removeClass('fa-spinner fa-spin').addClass('fa-search');
+            
+            $('#cliente_loading').addClass('d-none');
             $('#cliente_results').removeClass('show');
-            $('#crear_cliente_nuevo').removeClass('d-none');
+            $('#no_results').removeClass('d-none');
+            
+            // Mostrar mensaje de error más específico
+            const errorMsg = xhr.status === 404 ? 
+                'Endpoint de búsqueda no encontrado' : 
+                'Error de conexión con el servidor';
+            
+            console.warn('⚠️ Mensaje de error:', errorMsg);
         }
     });
 }
 
 // Mostrar resultados de la búsqueda
 function mostrarResultadosClientes(clientes, term) {
+    console.log('🎯 Mostrando resultados para término:', term);
+    console.log('📋 Clientes recibidos:', clientes);
+    
     const $results = $('#cliente_results');
     const $loading = $('#cliente_loading');
     const $noResults = $('#no_results');
@@ -724,23 +775,33 @@ function mostrarResultadosClientes(clientes, term) {
     $results.empty();
     
     if (clientes.length === 0) {
-        // No se encontraron clientes
+        console.log('🚫 No se encontraron clientes para:', term);
+        
+        // Mostrar mensaje de "no resultados"
         $noResults.removeClass('d-none');
         
-        // Agregar opción para crear cliente nuevo
+        // Agregar opción para crear cliente nuevo directamente en los resultados
         const $createOption = $(`
-            <div class="p-3 text-center border-top">
-                <div class="mb-2">
-                    <i class="fas fa-user-plus text-success fa-2x"></i>
+            <div class="dropdown-menu w-100 show" style="position: static;">
+                <div class="p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-slash text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted mb-2">No se encontró "${term}"</h5>
+                    <p class="text-muted mb-3">
+                        No existe ningún cliente con ese nombre, documento o empresa.
+                    </p>
+                    <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal" onclick="precargarDatosModal('${term}')">
+                        <i class="fas fa-user-plus me-2"></i>Crear Cliente "${term}"
+                    </button>
+                    <div class="mt-2">
+                        <small class="text-muted">El nombre se precargará automáticamente</small>
+                    </div>
                 </div>
-                <h6 class="mb-2">¿No encuentras el cliente?</h6>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal" onclick="precargarDatosModal('${term}')">
-                    <i class="fas fa-plus me-1"></i>Crear Cliente Nuevo
-                </button>
             </div>
         `);
         
-        $results.append($createOption).addClass('show');
+        $results.html($createOption.html()).addClass('show');
         return;
     }
     
@@ -1000,22 +1061,34 @@ $('#clienteRapidoModal').on('hidden.bs.modal', function() {
 let searchTimeout;
 $('#cliente_search').on('input keyup', function() {
     const term = $(this).val().trim();
+    const $searchIcon = $('.input-group-text i');
     
     // Limpiar timeout anterior
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
     
-    // Si no hay término, ocultar resultados
+    // Si no hay término, restaurar estado inicial
     if (term.length === 0) {
         $('#cliente_results').removeClass('show');
         $('#no_results').addClass('d-none');
         $('#cliente_loading').addClass('d-none');
+        $searchIcon.removeClass('fa-spinner fa-spin').addClass('fa-search');
         return;
     }
     
+    // Mostrar que está escribiendo
+    if (term.length < 2) {
+        $searchIcon.removeClass('fa-spinner fa-spin fa-search').addClass('fa-pencil-alt');
+        return;
+    }
+    
+    // Mostrar icono de búsqueda activa
+    $searchIcon.removeClass('fa-pencil-alt fa-search').addClass('fa-spinner fa-spin');
+    
     // Buscar después de 300ms de pausa en escritura
     searchTimeout = setTimeout(() => {
+        console.log('🔍 Iniciando búsqueda para:', term);
         buscarClientes(term);
     }, 300);
 });
