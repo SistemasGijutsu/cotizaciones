@@ -1,0 +1,93 @@
+# Sistema de Cotizaciones - .gitignore
+
+# Archivos de configuración sensibles
+config/database.php
+config/.env
+.env
+.env.local
+.env.production
+
+# Archivos de logs
+logs/*.log
+logs/*.txt
+error.log
+access.log
+
+# Archivos temporales y cache
+temp/
+cache/
+tmp/
+*.tmp
+*.cache
+
+# Archivos de sesión PHP
+sessions/
+*.sess
+
+# Archivos de backup de base de datos
+*.sql
+*.dump
+backup/
+backups/
+
+# Archivos de prueba y desarrollo
+test.php
+debug.php
+phpinfo.php
+
+# Dependencias y librerías
+vendor/
+node_modules/
+composer.phar
+*.phar
+
+# Archivos ZIP y TAR
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+tcpdf.zip
+
+# Archivos del sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.buildpath
+.settings/
+
+# Archivos de certificados SSL
+*.key
+*.crt
+*.pem
+*.p12
+
+# Archivos de configuración de servidor web
+.htaccess
+web.config
+
+# Archivos generados automáticamente
+generated/
+build/
+dist/
+
+# Archivos de imágenes temporales
+uploads/temp/
+public/images/temp/
+
+# Archivos de reportes PDF generados temporalmente
+reports/temp/
+pdfs/temp/
