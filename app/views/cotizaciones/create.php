@@ -32,16 +32,24 @@ $paquetes = $paquetes ?? [];
                         <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información del Cliente</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Buscador de Cliente -->
+                        <!-- Selector Simple de Cliente -->
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="buscar_cliente" class="form-label">Buscar Cliente</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                    <input type="text" class="form-control" id="buscar_cliente" 
-                                           placeholder="Buscar por nombre o documento..." autocomplete="off">
-                                </div>
-                                <div id="resultados_busqueda" class="dropdown-menu w-100" style="max-height: 200px; overflow-y: auto;"></div>
+                                <label for="cliente_select" class="form-label">Seleccionar Cliente *</label>
+                                <select class="form-select form-select-lg" id="cliente_select" required>
+                                    <option value="">-- Seleccione un cliente --</option>
+                                    <?php foreach ($clientes as $cliente): ?>
+                                        <option value="<?= $cliente['id'] ?>" 
+                                                data-nombre="<?= htmlspecialchars($cliente['nombre']) ?>"
+                                                data-documento="<?= htmlspecialchars($cliente['documento']) ?>"
+                                                data-tipo="<?= htmlspecialchars($cliente['tipo_documento'] ?? 'CC') ?>"
+                                                data-correo="<?= htmlspecialchars($cliente['correo'] ?? '') ?>"
+                                                data-telefono="<?= htmlspecialchars($cliente['telefono'] ?? '') ?>"
+                                                data-direccion="<?= htmlspecialchars($cliente['direccion'] ?? '') ?>">
+                                            <?= htmlspecialchars($cliente['nombre']) ?> - <?= htmlspecialchars($cliente['documento']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="fecha_vencimiento" class="form-label">Fecha Vencimiento *</label>
@@ -50,14 +58,9 @@ $paquetes = $paquetes ?? [];
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
-                                        <i class="fas fa-plus me-1"></i>Nuevo Cliente
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="limpiarCliente()" id="btn_limpiar" style="display:none;">
-                                        <i class="fas fa-times me-1"></i>Limpiar
-                                    </button>
-                                </div>
+                                <button type="button" class="btn btn-success d-block w-100" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                                </button>
                             </div>
                         </div>
 
@@ -99,9 +102,6 @@ $paquetes = $paquetes ?? [];
                                     <h6 class="mb-1"><i class="fas fa-check-circle me-2"></i>Cliente Seleccionado</h6>
                                     <small id="info_cliente_texto">Cliente listo para cotización</small>
                                 </div>
-                                <button type="button" class="btn btn-outline-light btn-sm" onclick="limpiarCliente()">
-                                    <i class="fas fa-exchange-alt me-1"></i>Cambiar
-                                </button>
                             </div>
                         </div>
 
@@ -320,130 +320,47 @@ $paquetes = $paquetes ?? [];
 
 <script>
 $(document).ready(function() {
-    // Buscador de clientes
-    $('#buscar_cliente').on('input', function() {
-        const termino = $(this).val().trim();
+    // Selector simple de clientes
+    $('#cliente_select').change(function() {
+        const $option = $(this).find('option:selected');
         
-        if (termino.length < 2) {
-            $('#resultados_busqueda').removeClass('show').empty();
+        if (!$option.val()) {
+            // Limpiar campos
+            $('#cliente_id').val('');
+            $('#nombre_apellidos').val('');
+            $('#cedula').val('');
+            $('#correo').val('');
+            $('#telefono').val('');
+            $('#direccion').val('');
+            $('#tipo_documento').val('');
+            $('#cliente_seleccionado_info').addClass('d-none');
             return;
         }
         
-        // Buscar clientes
-        $.ajax({
-            url: 'index.php?controller=cliente&action=search',
-            method: 'GET',
-            data: { term: termino },
-            success: function(clientes) {
-                mostrarResultadosClientes(clientes);
-            },
-            error: function() {
-                console.log('Error en búsqueda de clientes');
-            }
-        });
-    });
-    
-    // Ocultar resultados al hacer clic fuera
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('#buscar_cliente, #resultados_busqueda').length) {
-            $('#resultados_busqueda').removeClass('show');
-        }
+        // Llenar los campos con la información del cliente
+        const id = $option.val();
+        const nombre = $option.data('nombre');
+        const documento = $option.data('documento');
+        const tipo = $option.data('tipo');
+        const correo = $option.data('correo');
+        const telefono = $option.data('telefono');
+        const direccion = $option.data('direccion');
+        
+        $('#cliente_id').val(id);
+        $('#nombre_apellidos').val(nombre);
+        $('#cedula').val(documento);
+        $('#tipo_documento').val(tipo);
+        $('#correo').val(correo);
+        $('#telefono').val(telefono);
+        $('#direccion').val(direccion);
+        
+        // Mostrar indicador de cliente seleccionado
+        $('#cliente_seleccionado_info').removeClass('d-none');
+        $('#info_cliente_texto').text(nombre + ' - ' + documento + (correo ? ' • ' + correo : ''));
+        
+        console.log('Cliente seleccionado:', nombre);
     });
 });
-
-function mostrarResultadosClientes(clientes) {
-    const $resultados = $('#resultados_busqueda');
-    $resultados.empty();
-    
-    if (clientes.length === 0) {
-        $resultados.html('<div class="dropdown-item text-muted">No se encontraron clientes</div>');
-    } else {
-        clientes.forEach(cliente => {
-            const item = $(`
-                <a href="#" class="dropdown-item" onclick="seleccionarCliente(${cliente.id}, '${cliente.nombre}', '${cliente.documento}', '${cliente.correo || ''}', '${cliente.telefono || ''}', '${cliente.direccion || ''}', '${cliente.tipo_documento || 'CC'}')">
-                    <div><strong>${cliente.nombre}</strong></div>
-                    <small class="text-muted">${cliente.documento} - ${cliente.correo || 'Sin email'}</small>
-                </a>
-            `);
-            $resultados.append(item);
-        });
-    }
-    
-    $resultados.addClass('show');
-}
-
-function seleccionarCliente(id, nombre, documento, correo, telefono, direccion, tipoDoc) {
-    // Llenar los campos con la información del cliente
-    $('#cliente_id').val(id);
-    $('#nombre_apellidos').val(nombre);
-    $('#cedula').val(documento);
-    $('#correo').val(correo || '');
-    $('#telefono').val(telefono || '');
-    $('#direccion').val(direccion || '');
-    $('#tipo_documento').val(tipoDoc || 'CC');
-    
-    // Mostrar indicador de cliente seleccionado
-    $('#cliente_seleccionado_info').removeClass('d-none');
-    $('#info_cliente_texto').text(nombre + ' - ' + documento + (correo ? ' • ' + correo : ''));
-    
-    // Mostrar botón limpiar
-    $('#btn_limpiar').show();
-    
-    // Limpiar búsqueda y mostrar nombre del cliente
-    $('#buscar_cliente').val('✓ ' + nombre);
-    $('#resultados_busqueda').removeClass('show');
-    
-    console.log('Cliente seleccionado:', nombre);
-    
-    // Mostrar notificación de éxito
-    mostrarNotificacion('Cliente seleccionado correctamente', 'success');
-}
-
-function limpiarCliente() {
-    // Limpiar todos los campos
-    $('#cliente_id').val('');
-    $('#nombre_apellidos').val('').attr('placeholder', 'Seleccione cliente');
-    $('#cedula').val('').attr('placeholder', 'Seleccione cliente');
-    $('#correo').val('').attr('placeholder', 'Seleccione cliente');
-    $('#telefono').val('').attr('placeholder', 'Seleccione cliente');
-    $('#direccion').val('').attr('placeholder', 'Seleccione cliente');
-    $('#tipo_documento').val('').attr('placeholder', 'Seleccione cliente');
-    
-    // Ocultar indicador de cliente seleccionado
-    $('#cliente_seleccionado_info').addClass('d-none');
-    
-    // Limpiar búsqueda
-    $('#buscar_cliente').val('').focus();
-    
-    // Ocultar botón limpiar
-    $('#btn_limpiar').hide();
-    
-    mostrarNotificacion('Cliente eliminado', 'info');
-}
-
-function mostrarNotificacion(mensaje, tipo) {
-    // Crear notificación toast simple
-    const toast = $(`
-        <div class="toast align-items-center text-white bg-${tipo === 'success' ? 'success' : 'info'} border-0 position-fixed" 
-             style="top: 80px; right: 20px; z-index: 1050;" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-${tipo === 'success' ? 'check' : 'info'}-circle me-2"></i>${mensaje}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `);
-    
-    $('body').append(toast);
-    const bsToast = new bootstrap.Toast(toast[0]);
-    bsToast.show();
-    
-    // Remover después de ocultar
-    toast.on('hidden.bs.toast', function() {
-        $(this).remove();
-    });
-}
 
 function crearCliente() {
     const datos = {
