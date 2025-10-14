@@ -319,6 +319,7 @@ $paquetes = $paquetes ?? [];
 </div>
 
 <script>
+var itemCounter = 0;
 $(document).ready(function() {
     // Selector simple de clientes
     $('#cliente_select').change(function() {
@@ -409,8 +410,6 @@ function crearCliente() {
         }
     });
 }
-
-let itemCounter = 0;
 
 function agregarArticulo() {
     $('#articuloModal').modal('show');
