@@ -165,5 +165,40 @@ class ClienteController extends Controller {
         
         $this->jsonResponse($clientes);
     }
+    
+    /**
+     * Crear cliente rápido via AJAX
+     */
+    public function createRapido() {
+        if (!$this->isAjax() || !$this->isPost()) {
+            $this->redirect('index.php');
+        }
+        
+        $data = [
+            'nombre' => $this->getPostData('nombre'),
+            'documento' => $this->getPostData('documento'),
+            'tipo_documento' => $this->getPostData('tipo_documento', 'cedula'),
+            'empresa' => $this->getPostData('empresa'),
+            'correo' => $this->getPostData('correo'),
+            'telefono' => $this->getPostData('telefono', ''),
+            'direccion' => $this->getPostData('direccion', '')
+        ];
+        
+        try {
+            $clienteId = $this->clienteModel->createRapido($data);
+            $cliente = $this->clienteModel->getById($clienteId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'cliente' => $cliente,
+                'message' => 'Cliente creado exitosamente'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }
 ?>

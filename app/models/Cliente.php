@@ -10,14 +10,79 @@ class Cliente extends Model {
     protected $table = 'clientes';
     
     /**
-     * Buscar clientes por nombre o correo
+     * Buscar clientes por nombre, correo, documento o empresa
      */
     public function searchClientes($term) {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE nombre LIKE :term OR correo LIKE :term 
-                ORDER BY nombre ASC";
+        $sql = "SELECT *, 
+                       CASE 
+                           WHEN empresa IS NOT NULL AND empresa != '' THEN CONCAT(nombre, ' - ', empresa)
+                           ELSE nombre 
+                       END as nombre_completo,
+                       CASE 
+                           WHEN tipo_documento = 'nit' THEN CONCAT('NIT: ', documento)
+                           WHEN tipo_documento = 'cedula' THEN CONCAT('CC: ', documento)
+                           ELSE CONCAT('DOC: ', documento)
+                       END as documento_formato
+                FROM {$this->table} 
+                WHERE nombre LIKE :term 
+                   OR correo LIKE :term 
+                   OR documento LIKE :term 
+                   OR empresa LIKE :term
+                ORDER BY nombre ASC
+                LIMIT 10";
         $stmt = $this->query($sql, [':term' => "%$term%"]);
         return $stmt->fetchAll();
+    }
+    
+    /**
+     * Buscar cliente por documento
+     */
+    public function getByDocumento($documento) {
+        $sql = "SELECT * FROM {$this->table} WHERE documento = :documento";
+        $stmt = $this->query($sql, [':documento' => $documento]);
+        return $stmt->fetch();
+    }
+    
+    /**
+     * Crear cliente rápido con validación
+     */
+    public function createRapido($data) {
+        $errors = $this->validateClienteRapido($data);
+        if (!empty($errors)) {
+            throw new Exception(implode(', ', $errors));
+        }
+        
+        // Verificar si ya existe por documento
+        if (!empty($data['documento']) && $this->getByDocumento($data['documento'])) {
+            throw new Exception('Ya existe un cliente con este documento');
+        }
+        
+        $result = $this->create($data);
+        if ($result) {
+            return $this->db->lastInsertId();
+        }
+        throw new Exception('Error al crear el cliente');
+    }
+    
+    /**
+     * Validación simplificada para creación rápida
+     */
+    public function validateClienteRapido($data) {
+        $errors = [];
+        
+        if (empty($data['nombre'])) {
+            $errors[] = "El nombre es obligatorio";
+        }
+        
+        if (empty($data['documento'])) {
+            $errors[] = "El documento es obligatorio";
+        }
+        
+        if (!empty($data['correo']) && !filter_var($data['correo'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "El correo electrónico debe ser válido";
+        }
+        
+        return $errors;
     }
     
     /**

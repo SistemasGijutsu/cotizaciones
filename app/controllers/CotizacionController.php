@@ -52,15 +52,23 @@ class CotizacionController extends Controller {
             return;
         }
         
-        $clientes = $this->clienteModel->getAll();
-        $articulos = $this->articuloModel->getArticulosDisponibles();
-        $paquetes = $this->paqueteModel->getAll();
-        
-        $this->loadView('cotizaciones/create', [
-            'clientes' => $clientes,
-            'articulos' => $articulos,
-            'paquetes' => $paquetes
-        ]);
+        try {
+            $clientes = $this->clienteModel->getAll();
+            $articulos = $this->articuloModel->getAll(); // Cambiar a getAll() para evitar problemas
+            $paquetes = $this->paqueteModel->getAll();
+            
+            $this->loadView('cotizaciones/create', [
+                'clientes' => $clientes,
+                'articulos' => $articulos,
+                'paquetes' => $paquetes,
+                'clienteModel' => $this->clienteModel,
+                'articuloModel' => $this->articuloModel,
+                'paqueteModel' => $this->paqueteModel
+            ]);
+        } catch (Exception $e) {
+            $this->setAlert('Error al cargar los datos: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=index');
+        }
     }
     
     /**

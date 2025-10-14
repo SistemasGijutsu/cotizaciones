@@ -110,6 +110,23 @@ class Paquete extends Model {
     }
     
     /**
+     * Obtener todos los paquetes (override del método base)
+     */
+    public function getAll() {
+        $sql = "SELECT *, 0 as precio FROM {$this->table} ORDER BY nombre";
+        $stmt = $this->query($sql);
+        $paquetes = $stmt->fetchAll();
+        
+        // Calcular precios para cada paquete
+        foreach ($paquetes as &$paquete) {
+            $precios = $this->calcularPreciosPaquete($paquete['id']);
+            $paquete['precio'] = $precios['total_venta'];
+        }
+        
+        return $paquetes;
+    }
+    
+    /**
      * Obtener paquetes con información de precios
      */
     public function getPaquetesWithPrices() {

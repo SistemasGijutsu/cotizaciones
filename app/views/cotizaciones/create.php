@@ -5,10 +5,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Obtener todos los clientes y artículos para los select
-$clientes = $clienteModel->getAll();
-$articulos = $articuloModel->getAll();
-$paquetes = $paqueteModel->getAll();
+// Las variables $clientes, $articulos y $paquetes vienen del controlador
+// Si no están definidas, inicializarlas como arrays vacíos para evitar errores
+$clientes = $clientes ?? [];
+$articulos = $articulos ?? [];
+$paquetes = $paquetes ?? [];
+$errors = $errors ?? [];
+$cliente_seleccionado = $cliente_seleccionado ?? '';
+$items_seleccionados = $items_seleccionados ?? [];
 ?>
 
 <div class="container-fluid">
@@ -53,17 +57,42 @@ $paquetes = $paqueteModel->getAll();
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
-                                            <label for="cliente_id" class="form-label">Cliente *</label>
-                                            <select class="form-select" id="cliente_id" name="cliente_id" required>
-                                                <option value="">Seleccionar cliente...</option>
-                                                <?php foreach ($clientes as $cliente): ?>
-                                                    <option value="<?= $cliente['id'] ?>" 
-                                                            data-email="<?= htmlspecialchars($cliente['email']) ?>"
-                                                            data-telefono="<?= htmlspecialchars($cliente['telefono']) ?>">
-                                                        <?= htmlspecialchars($cliente['nombre']) ?> - <?= htmlspecialchars($cliente['empresa']) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+                                            <label for="cliente_search" class="form-label">Cliente *</label>
+                                            <div class="position-relative">
+                                                <input type="text" class="form-control" id="cliente_search" 
+                                                       placeholder="Buscar por nombre, documento, empresa..." 
+                                                       autocomplete="off">
+                                                <input type="hidden" id="cliente_id" name="cliente_id" required>
+                                                
+                                                <!-- Dropdown de resultados -->
+                                                <div id="cliente_results" class="dropdown-menu w-100" style="max-height: 300px; overflow-y: auto;">
+                                                    <!-- Los resultados se cargan aquí -->
+                                                </div>
+                                                
+                                                <!-- Info del cliente seleccionado -->
+                                                <div id="cliente_selected" class="mt-2 p-2 bg-light rounded d-none">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong id="cliente_nombre_display"></strong>
+                                                            <small class="text-muted d-block" id="cliente_info_display"></small>
+                                                        </div>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limpiarClienteSeleccionado()">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Botón para crear cliente nuevo cuando no se encuentra -->
+                                            <div id="crear_cliente_nuevo" class="mt-2 d-none">
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    No se encontraron clientes con ese criterio.
+                                                    <button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal">
+                                                        <i class="fas fa-plus me-1"></i> Crear Cliente
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                         
                                         <div class="mb-3">
@@ -215,7 +244,7 @@ $paquetes = $paqueteModel->getAll();
                                 <tr>
                                     <td><?= htmlspecialchars($articulo['codigo']) ?></td>
                                     <td><?= htmlspecialchars($articulo['descripcion']) ?></td>
-                                    <td>$<?= number_format($articulo['precio'], 2) ?></td>
+                                    <td>$<?= number_format($articulo['precio_venta'], 2) ?></td>
                                     <td>
                                         <span class="badge bg-<?= $articulo['stock'] > 0 ? 'success' : 'danger' ?>">
                                             <?= $articulo['stock'] ?>
@@ -223,7 +252,7 @@ $paquetes = $paqueteModel->getAll();
                                     </td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-primary" 
-                                                onclick="seleccionarArticulo(<?= $articulo['id'] ?>, '<?= htmlspecialchars($articulo['descripcion']) ?>', <?= $articulo['precio'] ?>)">
+                                                onclick="seleccionarArticulo(<?= $articulo['id'] ?>, '<?= htmlspecialchars($articulo['descripcion']) ?>', <?= $articulo['precio_venta'] ?>)">
                                             <i class="fas fa-plus"></i> Agregar
                                         </button>
                                     </td>
@@ -278,6 +307,86 @@ $paquetes = $paqueteModel->getAll();
     </div>
 </div>
 
+<!-- Modal para crear cliente rápido -->
+<div class="modal fade" id="clienteRapidoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Crear Cliente Rápido
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clienteRapidoForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_nombre" class="form-label">Nombre Completo *</label>
+                                <input type="text" class="form-control" id="nuevo_cliente_nombre" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_tipo_doc" class="form-label">Tipo Documento</label>
+                                <select class="form-select" id="nuevo_cliente_tipo_doc">
+                                    <option value="cedula">Cédula</option>
+                                    <option value="nit">NIT</option>
+                                    <option value="pasaporte">Pasaporte</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_documento" class="form-label">Número Documento *</label>
+                                <input type="text" class="form-control" id="nuevo_cliente_documento" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_empresa" class="form-label">Empresa</label>
+                                <input type="text" class="form-control" id="nuevo_cliente_empresa" 
+                                       placeholder="Opcional">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_correo" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="nuevo_cliente_correo">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nuevo_cliente_telefono" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="nuevo_cliente_telefono">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="nuevo_cliente_direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="nuevo_cliente_direccion">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="crearClienteRapido()">
+                    <i class="fas fa-save me-1"></i>
+                    Crear Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .stat-item {
     padding: 1rem 0;
@@ -308,6 +417,37 @@ $paquetes = $paqueteModel->getAll();
     background-color: #e9ecef;
 }
 
+/* Estilos para búsqueda de clientes */
+.dropdown-menu.show {
+    display: block;
+}
+
+.cliente-option {
+    padding: 0.75rem 1rem;
+}
+
+.cliente-option:hover {
+    background-color: #f8f9fa;
+}
+
+.cliente-option:focus {
+    background-color: #e9ecef;
+}
+
+#cliente_selected {
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa !important;
+}
+
+#cliente_results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
 @media (max-width: 768px) {
     .stat-item {
         margin-bottom: 1rem;
@@ -320,11 +460,20 @@ $paquetes = $paqueteModel->getAll();
     .btn-group .btn {
         margin-bottom: 0.5rem;
     }
+    
+    #cliente_results {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+    }
 }
 </style>
 
 <script>
 let itemCounter = 0;
+let clienteSearchTimeout;
+let clienteSeleccionado = null;
 
 function agregarArticulo() {
     $('#articuloModal').modal('show');
@@ -467,5 +616,208 @@ $('#cotizacionForm').on('submit', function(e) {
         alert('Debe agregar al menos un item a la cotización.');
         return false;
     }
+    
+    if (!$('#cliente_id').val()) {
+        e.preventDefault();
+        alert('Debe seleccionar un cliente.');
+        $('#cliente_search').focus();
+        return false;
+    }
+});
+
+// === FUNCIONALIDAD DE BÚSQUEDA DE CLIENTES ===
+
+// Búsqueda en tiempo real de clientes
+$('#cliente_search').on('input', function() {
+    const term = $(this).val().trim();
+    
+    // Limpiar timeout anterior
+    if (clienteSearchTimeout) {
+        clearTimeout(clienteSearchTimeout);
+    }
+    
+    if (term.length < 2) {
+        $('#cliente_results').removeClass('show');
+        $('#crear_cliente_nuevo').addClass('d-none');
+        return;
+    }
+    
+    // Buscar con delay para evitar muchas peticiones
+    clienteSearchTimeout = setTimeout(() => {
+        buscarClientes(term);
+    }, 300);
+});
+
+// Función para buscar clientes via AJAX
+function buscarClientes(term) {
+    $.ajax({
+        url: '/mod_cotizacion/index.php?controller=cliente&action=search',
+        method: 'GET',
+        data: { term: term },
+        dataType: 'json',
+        success: function(clientes) {
+            mostrarResultadosClientes(clientes, term);
+        },
+        error: function() {
+            console.error('Error al buscar clientes');
+        }
+    });
+}
+
+// Mostrar resultados de la búsqueda
+function mostrarResultadosClientes(clientes, term) {
+    const $results = $('#cliente_results');
+    $results.empty();
+    
+    if (clientes.length === 0) {
+        // No se encontraron clientes
+        $('#crear_cliente_nuevo').removeClass('d-none');
+        $results.removeClass('show');
+        return;
+    }
+    
+    $('#crear_cliente_nuevo').addClass('d-none');
+    
+    clientes.forEach(cliente => {
+        const empresaText = cliente.empresa ? ` - ${cliente.empresa}` : '';
+        const documentoText = cliente.documento ? ` (${cliente.documento_formato})` : '';
+        
+        const $item = $(`
+            <a href="#" class="dropdown-item cliente-option" data-cliente-id="${cliente.id}">
+                <div>
+                    <strong>${cliente.nombre}${empresaText}</strong>
+                    <small class="text-muted d-block">
+                        ${documentoText}
+                        ${cliente.correo ? ` • ${cliente.correo}` : ''}
+                        ${cliente.telefono ? ` • ${cliente.telefono}` : ''}
+                    </small>
+                </div>
+            </a>
+        `);
+        
+        $item.on('click', function(e) {
+            e.preventDefault();
+            seleccionarCliente(cliente);
+        });
+        
+        $results.append($item);
+    });
+    
+    $results.addClass('show');
+}
+
+// Seleccionar un cliente
+function seleccionarCliente(cliente) {
+    clienteSeleccionado = cliente;
+    $('#cliente_id').val(cliente.id);
+    $('#cliente_search').val('');
+    $('#cliente_results').removeClass('show');
+    $('#crear_cliente_nuevo').addClass('d-none');
+    
+    // Mostrar información del cliente seleccionado
+    const empresaText = cliente.empresa ? ` - ${cliente.empresa}` : '';
+    const documentoText = cliente.documento ? ` (${cliente.documento_formato})` : '';
+    
+    $('#cliente_nombre_display').text(cliente.nombre + empresaText);
+    $('#cliente_info_display').text(documentoText + (cliente.correo ? ` • ${cliente.correo}` : ''));
+    $('#cliente_selected').removeClass('d-none');
+}
+
+// Limpiar cliente seleccionado
+function limpiarClienteSeleccionado() {
+    clienteSeleccionado = null;
+    $('#cliente_id').val('');
+    $('#cliente_search').val('');
+    $('#cliente_selected').addClass('d-none');
+    $('#cliente_results').removeClass('show');
+    $('#crear_cliente_nuevo').addClass('d-none');
+}
+
+// Ocultar resultados cuando se hace clic fuera
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('#cliente_search, #cliente_results').length) {
+        $('#cliente_results').removeClass('show');
+    }
+});
+
+// === CREACIÓN RÁPIDA DE CLIENTE ===
+
+// Llenar modal con datos de búsqueda
+$('#clienteRapidoModal').on('show.bs.modal', function() {
+    const searchTerm = $('#cliente_search').val();
+    if (searchTerm) {
+        // Si parece un documento (solo números), llenarlo en documento
+        if (/^\d+$/.test(searchTerm)) {
+            $('#nuevo_cliente_documento').val(searchTerm);
+        } else {
+            // Si no, asumir que es un nombre
+            $('#nuevo_cliente_nombre').val(searchTerm);
+        }
+    }
+});
+
+// Función para crear cliente rápido
+function crearClienteRapido() {
+    const formData = {
+        nombre: $('#nuevo_cliente_nombre').val().trim(),
+        documento: $('#nuevo_cliente_documento').val().trim(),
+        tipo_documento: $('#nuevo_cliente_tipo_doc').val(),
+        empresa: $('#nuevo_cliente_empresa').val().trim(),
+        correo: $('#nuevo_cliente_correo').val().trim(),
+        telefono: $('#nuevo_cliente_telefono').val().trim(),
+        direccion: $('#nuevo_cliente_direccion').val().trim()
+    };
+    
+    // Validaciones básicas
+    if (!formData.nombre) {
+        alert('El nombre es obligatorio');
+        $('#nuevo_cliente_nombre').focus();
+        return;
+    }
+    
+    if (!formData.documento) {
+        alert('El documento es obligatorio');
+        $('#nuevo_cliente_documento').focus();
+        return;
+    }
+    
+    // Mostrar loading
+    const $btn = $(event.target);
+    const originalText = $btn.html();
+    $btn.html('<i class="fas fa-spinner fa-spin me-1"></i> Creando...').prop('disabled', true);
+    
+    // Crear cliente via AJAX
+    $.ajax({
+        url: '/mod_cotizacion/index.php?controller=cliente&action=createRapido',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Cliente creado exitosamente
+                seleccionarCliente(response.cliente);
+                $('#clienteRapidoModal').modal('hide');
+                
+                // Limpiar formulario
+                $('#clienteRapidoForm')[0].reset();
+                
+                alert('Cliente creado exitosamente');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Error al crear el cliente. Intente nuevamente.');
+        },
+        complete: function() {
+            // Restaurar botón
+            $btn.html(originalText).prop('disabled', false);
+        }
+    });
+}
+
+// Limpiar formulario cuando se cierra el modal
+$('#clienteRapidoModal').on('hidden.bs.modal', function() {
+    $('#clienteRapidoForm')[0].reset();
 });
 </script>
