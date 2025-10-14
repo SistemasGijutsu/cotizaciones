@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test jQuery</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test de jQuery</h1>
+    <input type="text" id="test-input" placeholder="Escribe algo...">
+    <div id="result"></div>
+    
+    <script>
+    $(document).ready(function() {
+        console.log('✅ jQuery funciona correctamente');
+        
+        $('#test-input').on('input', function() {
+            const value = $(this).val();
+            $('#result').html('Escribiste: ' + value);
+            console.log('Input detectado:', value);
+        });
+        
+        // Probar AJAX
+        $('#test-input').on('keyup', function() {
+            const term = $(this).val();
+            if (term.length > 2) {
+                console.log('Probando AJAX con:', term);
+                
+                $.ajax({
+                    url: 'index.php?controller=cliente&action=search',
+                    method: 'GET',
+                    data: { term: term },
+                    dataType: 'json',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    },
+                    success: function(data) {
+                        console.log('✅ AJAX exitoso:', data);
+                        $('#result').append('<br>AJAX OK: ' + data.length + ' resultados');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ Error AJAX:', error);
+                        $('#result').append('<br>❌ Error: ' + error);
+                    }
+                });
+            }
+        });
+    });
+    </script>
+</body>
+</html>

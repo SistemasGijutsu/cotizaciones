@@ -516,9 +516,11 @@ $items_seleccionados = $items_seleccionados ?? [];
 </style>
 
 <script>
-let itemCounter = 0;
-let clienteSearchTimeout;
-let clienteSeleccionado = null;
+$(document).ready(function() {
+    // Variables globales
+    let itemCounter = 0;
+    let clienteSearchTimeout;
+    let clienteSeleccionado = null;
 
 function agregarArticulo() {
     $('#articuloModal').modal('show');
@@ -1103,4 +1105,6 @@ $('#cliente_search').on('focus', function() {
         }
     }
 });
+
+}); // Fin de $(document).ready()
 </script>
