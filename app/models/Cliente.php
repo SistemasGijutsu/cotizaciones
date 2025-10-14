@@ -13,23 +13,9 @@ class Cliente extends Model {
      * Buscar clientes por nombre, correo, documento o empresa
      */
     public function searchClientes($term) {
-        $sql = "SELECT *, 
-                       CASE 
-                           WHEN empresa IS NOT NULL AND empresa != '' THEN CONCAT(nombre, ' - ', empresa)
-                           ELSE nombre 
-                       END as nombre_completo,
-                       CASE 
-                           WHEN tipo_documento = 'nit' THEN CONCAT('NIT: ', documento)
-                           WHEN tipo_documento = 'cedula' THEN CONCAT('CC: ', documento)
-                           ELSE CONCAT('DOC: ', documento)
-                       END as documento_formato
-                FROM {$this->table} 
+        $sql = "SELECT id, nombre, documento, correo FROM {$this->table} 
                 WHERE nombre LIKE :term 
-                   OR correo LIKE :term 
-                   OR documento LIKE :term 
-                   OR empresa LIKE :term
-                ORDER BY nombre ASC
-                LIMIT 10";
+                ORDER BY nombre ASC LIMIT 10";
         $stmt = $this->query($sql, [':term' => "%$term%"]);
         return $stmt->fetchAll();
     }

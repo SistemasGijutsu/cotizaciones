@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prueba Simple</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h2>Prueba de Búsqueda Simple</h2>
+    <input type="text" id="buscar" placeholder="Escribe DE">
+    <div id="resultados"></div>
+    
+    <script>
+    $('#buscar').on('input', function() {
+        const term = $(this).val();
+        console.log('Buscando:', term);
+        
+        if (term.length === 0) return;
+        
+        $.get('index.php?controller=cliente&action=search&term=' + term, function(data) {
+            console.log('Datos:', data);
+            $('#resultados').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+        }).fail(function() {
+            $('#resultados').html('Error en la búsqueda');
+        });
+    });
+    </script>
+</body>
+</html>

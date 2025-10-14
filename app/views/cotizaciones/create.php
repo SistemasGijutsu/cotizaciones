@@ -871,31 +871,18 @@ function mostrarResultadosClientes(clientes, term) {
     $results.addClass('show');
 }
 
-// Seleccionar un cliente
-function seleccionarCliente(cliente) {
-    clienteSeleccionado = cliente;
-    $('#cliente_id').val(cliente.id);
-    $('#cliente_search').val('');
+// Seleccionar cliente simple
+function seleccionarCliente(id, nombre) {
+    $('#cliente_id').val(id);
+    $('#cliente_search').val(nombre);
     $('#cliente_results').removeClass('show');
-    $('#crear_cliente_nuevo').addClass('d-none');
-    $('#no_results').addClass('d-none');
     
-    // Mostrar información del cliente seleccionado con animación
-    const empresaText = cliente.empresa ? ` - ${cliente.empresa}` : '';
-    const documentoText = cliente.documento ? ` (${cliente.documento_formato})` : '';
+    // Mostrar información del cliente
+    $('#cliente_nombre_display').text(nombre);
+    $('#cliente_info_display').text('Cliente seleccionado correctamente');
+    $('#cliente_selected').removeClass('d-none');
     
-    $('#cliente_nombre_display').text(cliente.nombre + empresaText);
-    $('#cliente_info_display').text(documentoText + (cliente.correo ? ` • ${cliente.correo}` : ''));
-    
-    // Mostrar con efecto de aparición
-    $('#cliente_selected').removeClass('d-none').hide().fadeIn(300);
-    
-    // Scroll suave hacia la siguiente sección
-    setTimeout(() => {
-        $('html, body').animate({
-            scrollTop: $('#cliente_selected').offset().top - 100
-        }, 500);
-    }, 300);
+    console.log('Cliente seleccionado:', nombre);
 }
 
 // Limpiar cliente seleccionado
@@ -1059,41 +1046,52 @@ $('#clienteRapidoModal').on('hidden.bs.modal', function() {
     $('#clienteRapidoForm')[0].reset();
 });
 
-// Event listener para búsqueda en tiempo real
-let searchTimeout;
-$('#cliente_search').on('input keyup', function() {
+// Búsqueda simple de clientes
+$('#cliente_search').on('input', function() {
     const term = $(this).val().trim();
-    const $searchIcon = $('.input-group-text i');
     
-    // Limpiar timeout anterior
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
+    console.log('Buscando:', term);
     
-    // Si no hay término, restaurar estado inicial
     if (term.length === 0) {
-        $('#cliente_results').removeClass('show');
-        $('#no_results').addClass('d-none');
-        $('#cliente_loading').addClass('d-none');
-        $searchIcon.removeClass('fa-spinner fa-spin').addClass('fa-search');
+        $('#cliente_results').removeClass('show').empty();
         return;
     }
     
-    // Mostrar que está escribiendo
-    if (term.length < 2) {
-        $searchIcon.removeClass('fa-spinner fa-spin fa-search').addClass('fa-pencil-alt');
-        return;
-    }
-    
-    // Mostrar icono de búsqueda activa
-    $searchIcon.removeClass('fa-pencil-alt fa-search').addClass('fa-spinner fa-spin');
-    
-    // Buscar después de 300ms de pausa en escritura
-    searchTimeout = setTimeout(() => {
-        console.log('🔍 Iniciando búsqueda para:', term);
-        buscarClientes(term);
-    }, 300);
+    // Buscar directamente
+    $.ajax({
+        url: 'index.php?controller=cliente&action=search',
+        method: 'GET',
+        data: { term: term },
+        success: function(data) {
+            console.log('Encontrados:', data);
+            mostrarResultados(data, term);
+        },
+        error: function() {
+            console.log('Error en búsqueda');
+        }
+    });
 });
+
+function mostrarResultados(clientes, term) {
+    const $results = $('#cliente_results');
+    $results.empty();
+    
+    if (clientes.length === 0) {
+        $results.html('<div class="p-3">No se encontraron clientes</div>').addClass('show');
+        return;
+    }
+    
+    clientes.forEach(cliente => {
+        const $item = $(`
+            <a href="#" class="dropdown-item" onclick="seleccionarCliente('${cliente.id}', '${cliente.nombre}')">
+                ${cliente.nombre} - ${cliente.documento}
+            </a>
+        `);
+        $results.append($item);
+    });
+    
+    $results.addClass('show');
+}
 
 // Mantener el foco en el campo de búsqueda
 $('#cliente_search').on('focus', function() {
