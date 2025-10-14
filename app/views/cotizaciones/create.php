@@ -50,45 +50,58 @@ $paquetes = $paquetes ?? [];
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <button type="button" class="btn btn-success d-block w-100" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
-                                    <i class="fas fa-plus me-1"></i>Nuevo Cliente
-                                </button>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
+                                        <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="limpiarCliente()" id="btn_limpiar" style="display:none;">
+                                        <i class="fas fa-times me-1"></i>Limpiar
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Datos del Cliente -->
+                        <!-- Datos del Cliente (Solo Lectura) -->
                         <div class="row">
                             <div class="col-md-2">
                                 <label for="tipo_documento" class="form-label">Tipo de documento</label>
-                                <select class="form-select" id="tipo_documento" name="tipo_documento">
-                                    <option value="CC">CC</option>
-                                    <option value="NIT">NIT</option>
-                                    <option value="CE">CE</option>
-                                    <option value="PAS">Pasaporte</option>
-                                </select>
+                                <input type="text" class="form-control bg-light" id="tipo_documento" name="tipo_documento" readonly placeholder="Seleccione cliente">
                             </div>
                             <div class="col-md-2">
                                 <label for="cedula" class="form-label">Cédula</label>
-                                <input type="text" class="form-control" id="cedula" name="cedula" required>
+                                <input type="text" class="form-control bg-light" id="cedula" name="cedula" readonly placeholder="Seleccione cliente" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="nombre_apellidos" class="form-label">Nombre y Apellidos</label>
-                                <input type="text" class="form-control" id="nombre_apellidos" name="nombre_apellidos" required>
+                                <input type="text" class="form-control bg-light" id="nombre_apellidos" name="nombre_apellidos" readonly placeholder="Seleccione cliente" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="telefono" class="form-label">Teléfono</label>
-                                <input type="text" class="form-control" id="telefono" name="telefono">
+                                <input type="text" class="form-control bg-light" id="telefono" name="telefono" readonly placeholder="Seleccione cliente">
                             </div>
                         </div>
 
                         <div class="row mt-3">
                             <div class="col-md-6">
                                 <label for="correo" class="form-label">Correo</label>
-                                <input type="email" class="form-control" id="correo" name="correo">
+                                <input type="email" class="form-control bg-light" id="correo" name="correo" readonly placeholder="Seleccione cliente">
                             </div>
                             <div class="col-md-6">
                                 <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" class="form-control" id="direccion" name="direccion">
+                                <input type="text" class="form-control bg-light" id="direccion" name="direccion" readonly placeholder="Seleccione cliente">
+                            </div>
+                        </div>
+
+                        <!-- Indicador de cliente seleccionado -->
+                        <div id="cliente_seleccionado_info" class="mt-3 p-3 bg-success text-white rounded d-none">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="mb-1"><i class="fas fa-check-circle me-2"></i>Cliente Seleccionado</h6>
+                                    <small id="info_cliente_texto">Cliente listo para cotización</small>
+                                </div>
+                                <button type="button" class="btn btn-outline-light btn-sm" onclick="limpiarCliente()">
+                                    <i class="fas fa-exchange-alt me-1"></i>Cambiar
+                                </button>
                             </div>
                         </div>
 
@@ -364,16 +377,72 @@ function seleccionarCliente(id, nombre, documento, correo, telefono, direccion, 
     $('#cliente_id').val(id);
     $('#nombre_apellidos').val(nombre);
     $('#cedula').val(documento);
-    $('#correo').val(correo);
-    $('#telefono').val(telefono);
-    $('#direccion').val(direccion);
-    $('#tipo_documento').val(tipoDoc);
+    $('#correo').val(correo || '');
+    $('#telefono').val(telefono || '');
+    $('#direccion').val(direccion || '');
+    $('#tipo_documento').val(tipoDoc || 'CC');
     
-    // Limpiar búsqueda
-    $('#buscar_cliente').val(nombre);
+    // Mostrar indicador de cliente seleccionado
+    $('#cliente_seleccionado_info').removeClass('d-none');
+    $('#info_cliente_texto').text(nombre + ' - ' + documento + (correo ? ' • ' + correo : ''));
+    
+    // Mostrar botón limpiar
+    $('#btn_limpiar').show();
+    
+    // Limpiar búsqueda y mostrar nombre del cliente
+    $('#buscar_cliente').val('✓ ' + nombre);
     $('#resultados_busqueda').removeClass('show');
     
     console.log('Cliente seleccionado:', nombre);
+    
+    // Mostrar notificación de éxito
+    mostrarNotificacion('Cliente seleccionado correctamente', 'success');
+}
+
+function limpiarCliente() {
+    // Limpiar todos los campos
+    $('#cliente_id').val('');
+    $('#nombre_apellidos').val('').attr('placeholder', 'Seleccione cliente');
+    $('#cedula').val('').attr('placeholder', 'Seleccione cliente');
+    $('#correo').val('').attr('placeholder', 'Seleccione cliente');
+    $('#telefono').val('').attr('placeholder', 'Seleccione cliente');
+    $('#direccion').val('').attr('placeholder', 'Seleccione cliente');
+    $('#tipo_documento').val('').attr('placeholder', 'Seleccione cliente');
+    
+    // Ocultar indicador de cliente seleccionado
+    $('#cliente_seleccionado_info').addClass('d-none');
+    
+    // Limpiar búsqueda
+    $('#buscar_cliente').val('').focus();
+    
+    // Ocultar botón limpiar
+    $('#btn_limpiar').hide();
+    
+    mostrarNotificacion('Cliente eliminado', 'info');
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    // Crear notificación toast simple
+    const toast = $(`
+        <div class="toast align-items-center text-white bg-${tipo === 'success' ? 'success' : 'info'} border-0 position-fixed" 
+             style="top: 80px; right: 20px; z-index: 1050;" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${tipo === 'success' ? 'check' : 'info'}-circle me-2"></i>${mensaje}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    
+    $('body').append(toast);
+    const bsToast = new bootstrap.Toast(toast[0]);
+    bsToast.show();
+    
+    // Remover después de ocultar
+    toast.on('hidden.bs.toast', function() {
+        $(this).remove();
+    });
 }
 
 function crearCliente() {
@@ -413,7 +482,7 @@ function crearCliente() {
                 $('#nuevoClienteModal').modal('hide');
                 $('#nuevoClienteForm')[0].reset();
                 
-                alert('Cliente creado exitosamente');
+                mostrarNotificacion('Cliente creado y seleccionado exitosamente', 'success');
             } else {
                 alert('Error: ' + response.message);
             }
