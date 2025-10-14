@@ -81,39 +81,42 @@ class CotizacionController extends Controller {
         $items = [];
         if (isset($_POST['items']) && is_array($_POST['items'])) {
             foreach ($_POST['items'] as $item) {
-                if (isset($item['id_articulo']) && isset($item['cantidad']) && $item['cantidad'] > 0) {
-                    $items[] = [
-                        'id_articulo' => $item['id_articulo'],
-                        'cantidad' => intval($item['cantidad'])
-                    ];
+                // Verificar que tenga los campos necesarios
+                if (isset($item['id']) && isset($item['tipo']) && isset($item['cantidad']) && $item['cantidad'] > 0) {
+                    // Por ahora solo procesamos artículos
+                    if ($item['tipo'] === 'articulo') {
+                        $items[] = [
+                            'id_articulo' => $item['id'],
+                            'cantidad' => intval($item['cantidad']),
+                            'precio' => floatval($item['precio'] ?? 0),
+                            'utilidad' => floatval($item['utilidad'] ?? 0)
+                        ];
+                    }
+                    // TODO: Implementar soporte para paquetes
                 }
             }
         }
         
-        // Validar datos
-        $errors = $this->cotizacionModel->validateCotizacionData($clienteId, $items);
+        // Validar que haya cliente y items
+        if (empty($clienteId)) {
+            $this->setAlert('Debe seleccionar un cliente', 'error');
+            $this->redirect('index.php?controller=cotizacion&action=create');
+            return;
+        }
         
-        if (empty($errors)) {
-            try {
-                $cotizacionId = $this->cotizacionModel->createCotizacionCompleta($clienteId, $items);
-                $this->setAlert('Cotización creada exitosamente', 'success');
-                $this->redirect('index.php?controller=cotizacion&action=show&id=' . $cotizacionId);
-            } catch (Exception $e) {
-                $this->setAlert('Error al crear la cotización: ' . $e->getMessage(), 'error');
-            }
-        } else {
-            $clientes = $this->clienteModel->getAll();
-            $articulos = $this->articuloModel->getArticulosDisponibles();
-            $paquetes = $this->paqueteModel->getAll();
-            
-            $this->loadView('cotizaciones/create', [
-                'clientes' => $clientes,
-                'articulos' => $articulos,
-                'paquetes' => $paquetes,
-                'cliente_seleccionado' => $clienteId,
-                'items_seleccionados' => $items,
-                'errors' => $errors
-            ]);
+        if (empty($items)) {
+            $this->setAlert('Debe agregar al menos un artículo a la cotización', 'error');
+            $this->redirect('index.php?controller=cotizacion&action=create');
+            return;
+        }
+        
+        try {
+            $cotizacionId = $this->cotizacionModel->createCotizacionCompleta($clienteId, $items);
+            $this->setAlert('Cotización creada exitosamente', 'success');
+            $this->redirect('index.php?controller=cotizacion&action=show&id=' . $cotizacionId);
+        } catch (Exception $e) {
+            $this->setAlert('Error al crear la cotización: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=create');
         }
     }
     
