@@ -207,8 +207,8 @@ $paquetes = $paquetes ?? [];
                         <?php foreach ($articulos as $articulo): ?>
                             <option value="<?= $articulo['id'] ?>" 
                                     data-nombre="<?= htmlspecialchars($articulo['nombre']) ?>"
-                                    data-precio="<?= $articulo['precio'] ?>">
-                                <?= htmlspecialchars($articulo['nombre']) ?> - $<?= number_format($articulo['precio']) ?>
+                                    data-precio="<?= $articulo['precio_venta'] ?? 0 ?>">
+                                <?= htmlspecialchars($articulo['nombre']) ?> - $<?= number_format($articulo['precio_venta'] ?? 0, 0) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
