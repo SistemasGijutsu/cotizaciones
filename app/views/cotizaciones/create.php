@@ -32,43 +32,68 @@ $paquetes = $paquetes ?? [];
                         <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información del Cliente</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <label for="cliente_id" class="form-label">Seleccionar Cliente *</label>
-                                <select class="form-select form-select-lg" id="cliente_id" name="cliente_id" required>
-                                    <option value="">-- Seleccione un cliente --</option>
-                                    <?php foreach ($clientes as $cliente): ?>
-                                        <option value="<?= $cliente['id'] ?>" 
-                                                data-nombre="<?= htmlspecialchars($cliente['nombre']) ?>"
-                                                data-documento="<?= htmlspecialchars($cliente['documento']) ?>"
-                                                data-correo="<?= htmlspecialchars($cliente['correo']) ?>">
-                                            <?= htmlspecialchars($cliente['nombre']) ?> - <?= htmlspecialchars($cliente['documento']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                        <!-- Buscador de Cliente -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="buscar_cliente" class="form-label">Buscar Cliente</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="buscar_cliente" 
+                                           placeholder="Buscar por nombre o documento..." autocomplete="off">
+                                </div>
+                                <div id="resultados_busqueda" class="dropdown-menu w-100" style="max-height: 200px; overflow-y: auto;"></div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="fecha_vencimiento" class="form-label">Fecha Vencimiento *</label>
-                                <input type="date" class="form-control form-control-lg" id="fecha_vencimiento" 
+                                <input type="date" class="form-control" id="fecha_vencimiento" 
                                        name="fecha_vencimiento" value="<?= date('Y-m-d', strtotime('+30 days')) ?>" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-success d-block w-100" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Información del cliente seleccionado -->
-                        <div id="cliente_info" class="mt-3 p-3 bg-light rounded d-none">
-                            <h6><i class="fas fa-info-circle text-primary me-2"></i>Datos del Cliente</h6>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <strong>Nombre:</strong> <span id="info_nombre"></span>
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Documento:</strong> <span id="info_documento"></span>
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Email:</strong> <span id="info_correo"></span>
-                                </div>
+                        <!-- Datos del Cliente -->
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label for="tipo_documento" class="form-label">Tipo de documento</label>
+                                <select class="form-select" id="tipo_documento" name="tipo_documento">
+                                    <option value="CC">CC</option>
+                                    <option value="NIT">NIT</option>
+                                    <option value="CE">CE</option>
+                                    <option value="PAS">Pasaporte</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="cedula" class="form-label">Cédula</label>
+                                <input type="text" class="form-control" id="cedula" name="cedula" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nombre_apellidos" class="form-label">Nombre y Apellidos</label>
+                                <input type="text" class="form-control" id="nombre_apellidos" name="nombre_apellidos" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="telefono" name="telefono">
                             </div>
                         </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="correo" class="form-label">Correo</label>
+                                <input type="email" class="form-control" id="correo" name="correo">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion">
+                            </div>
+                        </div>
+
+                        <!-- Cliente ID hidden -->
+                        <input type="hidden" id="cliente_id" name="cliente_id">
                     </div>
                 </div>
 
@@ -223,21 +248,181 @@ $paquetes = $paquetes ?? [];
     </div>
 </div>
 
+<!-- Modal Nuevo Cliente -->
+<div class="modal fade" id="nuevoClienteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Crear Nuevo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nuevoClienteForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nuevo_nombre" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tipo Documento</label>
+                            <select class="form-select" id="nuevo_tipo_doc">
+                                <option value="CC">CC</option>
+                                <option value="NIT">NIT</option>
+                                <option value="CE">CE</option>
+                                <option value="PAS">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Documento *</label>
+                            <input type="text" class="form-control" id="nuevo_documento" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Correo</label>
+                            <input type="email" class="form-control" id="nuevo_correo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="nuevo_telefono">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="nuevo_direccion">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="crearCliente()">
+                    <i class="fas fa-save me-1"></i>Crear Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 $(document).ready(function() {
-    // Mostrar info del cliente al seleccionar
-    $('#cliente_id').change(function() {
-        const option = $(this).find('option:selected');
-        if (option.val()) {
-            $('#info_nombre').text(option.data('nombre'));
-            $('#info_documento').text(option.data('documento'));
-            $('#info_correo').text(option.data('correo'));
-            $('#cliente_info').removeClass('d-none');
-        } else {
-            $('#cliente_info').addClass('d-none');
+    // Buscador de clientes
+    $('#buscar_cliente').on('input', function() {
+        const termino = $(this).val().trim();
+        
+        if (termino.length < 2) {
+            $('#resultados_busqueda').removeClass('show').empty();
+            return;
+        }
+        
+        // Buscar clientes
+        $.ajax({
+            url: 'index.php?controller=cliente&action=search',
+            method: 'GET',
+            data: { term: termino },
+            success: function(clientes) {
+                mostrarResultadosClientes(clientes);
+            },
+            error: function() {
+                console.log('Error en búsqueda de clientes');
+            }
+        });
+    });
+    
+    // Ocultar resultados al hacer clic fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#buscar_cliente, #resultados_busqueda').length) {
+            $('#resultados_busqueda').removeClass('show');
         }
     });
 });
+
+function mostrarResultadosClientes(clientes) {
+    const $resultados = $('#resultados_busqueda');
+    $resultados.empty();
+    
+    if (clientes.length === 0) {
+        $resultados.html('<div class="dropdown-item text-muted">No se encontraron clientes</div>');
+    } else {
+        clientes.forEach(cliente => {
+            const item = $(`
+                <a href="#" class="dropdown-item" onclick="seleccionarCliente(${cliente.id}, '${cliente.nombre}', '${cliente.documento}', '${cliente.correo || ''}', '${cliente.telefono || ''}', '${cliente.direccion || ''}', '${cliente.tipo_documento || 'CC'}')">
+                    <div><strong>${cliente.nombre}</strong></div>
+                    <small class="text-muted">${cliente.documento} - ${cliente.correo || 'Sin email'}</small>
+                </a>
+            `);
+            $resultados.append(item);
+        });
+    }
+    
+    $resultados.addClass('show');
+}
+
+function seleccionarCliente(id, nombre, documento, correo, telefono, direccion, tipoDoc) {
+    // Llenar los campos con la información del cliente
+    $('#cliente_id').val(id);
+    $('#nombre_apellidos').val(nombre);
+    $('#cedula').val(documento);
+    $('#correo').val(correo);
+    $('#telefono').val(telefono);
+    $('#direccion').val(direccion);
+    $('#tipo_documento').val(tipoDoc);
+    
+    // Limpiar búsqueda
+    $('#buscar_cliente').val(nombre);
+    $('#resultados_busqueda').removeClass('show');
+    
+    console.log('Cliente seleccionado:', nombre);
+}
+
+function crearCliente() {
+    const datos = {
+        nombre: $('#nuevo_nombre').val().trim(),
+        documento: $('#nuevo_documento').val().trim(),
+        tipo_documento: $('#nuevo_tipo_doc').val(),
+        correo: $('#nuevo_correo').val().trim(),
+        telefono: $('#nuevo_telefono').val().trim(),
+        direccion: $('#nuevo_direccion').val().trim()
+    };
+    
+    if (!datos.nombre || !datos.documento) {
+        alert('Nombre y documento son obligatorios');
+        return;
+    }
+    
+    // Crear cliente via AJAX
+    $.ajax({
+        url: 'index.php?controller=cliente&action=createRapido',
+        method: 'POST',
+        dataType: 'json',
+        data: datos,
+        success: function(response) {
+            if (response.success) {
+                // Llenar los campos con el cliente creado
+                seleccionarCliente(
+                    response.cliente.id,
+                    response.cliente.nombre,
+                    response.cliente.documento,
+                    response.cliente.correo || '',
+                    response.cliente.telefono || '',
+                    response.cliente.direccion || '',
+                    response.cliente.tipo_documento || 'CC'
+                );
+                
+                $('#nuevoClienteModal').modal('hide');
+                $('#nuevoClienteForm')[0].reset();
+                
+                alert('Cliente creado exitosamente');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Error al crear el cliente');
+        }
+    });
+}
 
 let itemCounter = 0;
 

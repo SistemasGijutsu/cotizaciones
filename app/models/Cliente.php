@@ -13,8 +13,9 @@ class Cliente extends Model {
      * Buscar clientes por nombre, correo, documento o empresa
      */
     public function searchClientes($term) {
-        $sql = "SELECT id, nombre, documento, correo FROM {$this->table} 
-                WHERE nombre LIKE :term 
+        $sql = "SELECT id, nombre, documento, tipo_documento, correo, telefono, direccion 
+                FROM {$this->table} 
+                WHERE nombre LIKE :term OR documento LIKE :term
                 ORDER BY nombre ASC LIMIT 10";
         $stmt = $this->query($sql, [':term' => "%$term%"]);
         return $stmt->fetchAll();
