@@ -66,13 +66,17 @@ $items_seleccionados = $items_seleccionados ?? [];
                                                     <span class="input-group-text bg-primary text-white">
                                                         <i class="fas fa-search"></i>
                                                     </span>
-                                                    <input type="text" class="form-control" id="cliente_search" 
-                                                           placeholder="🔍 Buscar por nombre, documento, empresa..." 
+                                                    <input type="text" class="form-control form-control-lg" id="cliente_search" 
+                                                           placeholder="Escribe el nombre del cliente para buscarlo..." 
                                                            autocomplete="off">
-                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal">
+                                                    <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal">
                                                         <i class="fas fa-user-plus me-1"></i>Nuevo
                                                     </button>
                                                 </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Busca por nombre, documento, correo o empresa. Si no existe, puedes crearlo.
+                                                </small>
                                                 <input type="hidden" id="cliente_id" name="cliente_id" required>
                                                 
                                                 <!-- Dropdown de resultados -->
@@ -103,9 +107,15 @@ $items_seleccionados = $items_seleccionados ?? [];
                                                 </div>
                                                 
                                                 <!-- No hay resultados -->
-                                                <div id="no_results" class="mt-2 text-center text-muted d-none">
-                                                    <i class="fas fa-search me-2"></i>
-                                                    <small>No se encontraron clientes</small>
+                                                <div id="no_results" class="mt-3 p-3 bg-light border rounded text-center d-none">
+                                                    <div class="mb-2">
+                                                        <i class="fas fa-search-minus text-muted" style="font-size: 2rem;"></i>
+                                                    </div>
+                                                    <h6 class="text-muted mb-2">No se encontraron clientes</h6>
+                                                    <p class="text-muted small mb-0">
+                                                        No existe ningún cliente con el término buscado.<br>
+                                                        Puedes crear uno nuevo usando el botón verde.
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -839,17 +849,17 @@ function limpiarClienteSeleccionado() {
 
 // Precargar datos en el modal de cliente rápido
 function precargarDatosModal(termino = '') {
-    $('#cliente_rapido_nombre').val(termino);
-    $('#cliente_rapido_tipo_documento').val('CC');
-    $('#cliente_rapido_documento').val('');
-    $('#cliente_rapido_correo').val('');
-    $('#cliente_rapido_telefono').val('');
-    $('#cliente_rapido_direccion').val('');
-    $('#cliente_rapido_empresa').val('');
+    $('#nuevo_cliente_nombre').val(termino);
+    $('#nuevo_cliente_tipo_doc').val('cedula');
+    $('#nuevo_cliente_documento').val('');
+    $('#nuevo_cliente_correo').val('');
+    $('#nuevo_cliente_telefono').val('');
+    $('#nuevo_cliente_direccion').val('');
+    $('#nuevo_cliente_empresa').val('');
     
     // Focus en el campo nombre después de que se abra el modal
     setTimeout(() => {
-        $('#cliente_rapido_nombre').focus().select();
+        $('#nuevo_cliente_nombre').focus().select();
     }, 500);
 }
 
@@ -921,13 +931,58 @@ function crearClienteRapido() {
                 // Limpiar formulario
                 $('#clienteRapidoForm')[0].reset();
                 
-                alert('Cliente creado exitosamente');
+                // Mostrar mensaje de éxito más profesional
+                const toastHtml = `
+                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ¡Cliente creado exitosamente! Ya puedes continuar con la cotización.
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+                
+                // Crear container de toast si no existe
+                if (!$('#toast-container').length) {
+                    $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+                }
+                
+                // Mostrar toast
+                const $toast = $(toastHtml);
+                $('#toast-container').append($toast);
+                const toast = new bootstrap.Toast($toast[0]);
+                toast.show();
+                
+                // Remover después de que se oculte
+                $toast.on('hidden.bs.toast', function() {
+                    $(this).remove();
+                });
+                
             } else {
                 alert('Error: ' + response.message);
             }
         },
-        error: function() {
-            alert('Error al crear el cliente. Intente nuevamente.');
+        error: function(xhr, status, error) {
+            console.error('Error AJAX:', { xhr, status, error });
+            
+            let errorMsg = 'Error al conectar con el servidor. Intente nuevamente.';
+            
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.message) {
+                        errorMsg = response.message;
+                    }
+                } catch (e) {
+                    // Si no es JSON válido, usar mensaje por defecto
+                }
+            }
+            
+            alert('❌ ' + errorMsg);
         },
         complete: function() {
             // Restaurar botón
@@ -939,5 +994,40 @@ function crearClienteRapido() {
 // Limpiar formulario cuando se cierra el modal
 $('#clienteRapidoModal').on('hidden.bs.modal', function() {
     $('#clienteRapidoForm')[0].reset();
+});
+
+// Event listener para búsqueda en tiempo real
+let searchTimeout;
+$('#cliente_search').on('input keyup', function() {
+    const term = $(this).val().trim();
+    
+    // Limpiar timeout anterior
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Si no hay término, ocultar resultados
+    if (term.length === 0) {
+        $('#cliente_results').removeClass('show');
+        $('#no_results').addClass('d-none');
+        $('#cliente_loading').addClass('d-none');
+        return;
+    }
+    
+    // Buscar después de 300ms de pausa en escritura
+    searchTimeout = setTimeout(() => {
+        buscarClientes(term);
+    }, 300);
+});
+
+// Mantener el foco en el campo de búsqueda
+$('#cliente_search').on('focus', function() {
+    const term = $(this).val().trim();
+    if (term.length > 0) {
+        // Si ya hay resultados, mostrarlos
+        if ($('#cliente_results').children().length > 0) {
+            $('#cliente_results').addClass('show');
+        }
+    }
 });
 </script>
