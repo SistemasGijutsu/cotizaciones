@@ -57,40 +57,55 @@ $items_seleccionados = $items_seleccionados ?? [];
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
-                                            <label for="cliente_search" class="form-label">Cliente *</label>
+                                            <label for="cliente_search" class="form-label">
+                                                <i class="fas fa-user me-2"></i>Cliente *
+                                            </label>
                                             <div class="position-relative">
-                                                <input type="text" class="form-control" id="cliente_search" 
-                                                       placeholder="Buscar por nombre, documento, empresa..." 
-                                                       autocomplete="off">
+                                                <!-- Input de búsqueda principal -->
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-primary text-white">
+                                                        <i class="fas fa-search"></i>
+                                                    </span>
+                                                    <input type="text" class="form-control" id="cliente_search" 
+                                                           placeholder="🔍 Buscar por nombre, documento, empresa..." 
+                                                           autocomplete="off">
+                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal">
+                                                        <i class="fas fa-user-plus me-1"></i>Nuevo
+                                                    </button>
+                                                </div>
                                                 <input type="hidden" id="cliente_id" name="cliente_id" required>
                                                 
                                                 <!-- Dropdown de resultados -->
-                                                <div id="cliente_results" class="dropdown-menu w-100" style="max-height: 300px; overflow-y: auto;">
+                                                <div id="cliente_results" class="dropdown-menu w-100 shadow-lg" style="max-height: 300px; overflow-y: auto; z-index: 1050;">
                                                     <!-- Los resultados se cargan aquí -->
                                                 </div>
                                                 
                                                 <!-- Info del cliente seleccionado -->
-                                                <div id="cliente_selected" class="mt-2 p-2 bg-light rounded d-none">
+                                                <div id="cliente_selected" class="mt-3 p-3 bg-gradient-primary text-white rounded d-none">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div>
+                                                            <i class="fas fa-user-check me-2"></i>
                                                             <strong id="cliente_nombre_display"></strong>
-                                                            <small class="text-muted d-block" id="cliente_info_display"></small>
+                                                            <small class="d-block opacity-75" id="cliente_info_display"></small>
                                                         </div>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limpiarClienteSeleccionado()">
+                                                        <button type="button" class="btn btn-sm btn-outline-light" onclick="limpiarClienteSeleccionado()">
                                                             <i class="fas fa-times"></i>
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            
-                                            <!-- Botón para crear cliente nuevo cuando no se encuentra -->
-                                            <div id="crear_cliente_nuevo" class="mt-2 d-none">
-                                                <div class="alert alert-info">
-                                                    <i class="fas fa-info-circle me-2"></i>
-                                                    No se encontraron clientes con ese criterio.
-                                                    <button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal">
-                                                        <i class="fas fa-plus me-1"></i> Crear Cliente
-                                                    </button>
+                                                
+                                                <!-- Loading indicator -->
+                                                <div id="cliente_loading" class="mt-2 text-center d-none">
+                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                        <span class="visually-hidden">Buscando...</span>
+                                                    </div>
+                                                    <small class="text-muted ms-2">Buscando clientes...</small>
+                                                </div>
+                                                
+                                                <!-- No hay resultados -->
+                                                <div id="no_results" class="mt-2 text-center text-muted d-none">
+                                                    <i class="fas fa-search me-2"></i>
+                                                    <small>No se encontraron clientes</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -636,11 +651,17 @@ $('#cliente_search').on('input', function() {
         clearTimeout(clienteSearchTimeout);
     }
     
+    // Ocultar todos los elementos
+    $('#cliente_results').removeClass('show');
+    $('#cliente_loading').addClass('d-none');
+    $('#no_results').addClass('d-none');
+    
     if (term.length < 2) {
-        $('#cliente_results').removeClass('show');
-        $('#crear_cliente_nuevo').addClass('d-none');
         return;
     }
+    
+    // Mostrar loading
+    $('#cliente_loading').removeClass('d-none');
     
     // Buscar con delay para evitar muchas peticiones
     clienteSearchTimeout = setTimeout(() => {
@@ -648,18 +669,36 @@ $('#cliente_search').on('input', function() {
     }, 300);
 });
 
+// Agregar evento focus para mostrar sugerencias
+$('#cliente_search').on('focus', function() {
+    const term = $(this).val().trim();
+    if (term.length < 2) {
+        // Mostrar sugerencia de búsqueda
+        const $placeholder = $(`
+            <div class="p-3 text-center text-muted">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p class="mb-0">Escribe al menos 2 caracteres para buscar</p>
+                <small>Busca por nombre, documento o empresa</small>
+            </div>
+        `);
+        $('#cliente_results').empty().append($placeholder).addClass('show');
+    }
+});
+
 // Función para buscar clientes via AJAX
 function buscarClientes(term) {
     $.ajax({
-        url: '/mod_cotizacion/index.php?controller=cliente&action=search',
+        url: 'index.php?controller=cliente&action=search',
         method: 'GET',
         data: { term: term },
         dataType: 'json',
         success: function(clientes) {
             mostrarResultadosClientes(clientes, term);
         },
-        error: function() {
-            console.error('Error al buscar clientes');
+        error: function(xhr, status, error) {
+            console.error('Error al buscar clientes:', error);
+            $('#cliente_results').removeClass('show');
+            $('#crear_cliente_nuevo').removeClass('d-none');
         }
     });
 }
@@ -667,33 +706,75 @@ function buscarClientes(term) {
 // Mostrar resultados de la búsqueda
 function mostrarResultadosClientes(clientes, term) {
     const $results = $('#cliente_results');
+    const $loading = $('#cliente_loading');
+    const $noResults = $('#no_results');
+    
+    // Ocultar loading
+    $loading.addClass('d-none');
     $results.empty();
     
     if (clientes.length === 0) {
         // No se encontraron clientes
-        $('#crear_cliente_nuevo').removeClass('d-none');
-        $results.removeClass('show');
+        $noResults.removeClass('d-none');
+        
+        // Agregar opción para crear cliente nuevo
+        const $createOption = $(`
+            <div class="p-3 text-center border-top">
+                <div class="mb-2">
+                    <i class="fas fa-user-plus text-success fa-2x"></i>
+                </div>
+                <h6 class="mb-2">¿No encuentras el cliente?</h6>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal" onclick="precargarDatosModal('${term}')">
+                    <i class="fas fa-plus me-1"></i>Crear Cliente Nuevo
+                </button>
+            </div>
+        `);
+        
+        $results.append($createOption).addClass('show');
         return;
     }
     
-    $('#crear_cliente_nuevo').addClass('d-none');
+    $noResults.addClass('d-none');
     
-    clientes.forEach(cliente => {
+    // Agregar header con contador
+    const $header = $(`
+        <div class="dropdown-header d-flex justify-content-between align-items-center">
+            <strong>Clientes encontrados</strong>
+            <span class="badge bg-primary">${clientes.length}</span>
+        </div>
+    `);
+    $results.append($header);
+    
+    clientes.forEach((cliente, index) => {
         const empresaText = cliente.empresa ? ` - ${cliente.empresa}` : '';
         const documentoText = cliente.documento ? ` (${cliente.documento_formato})` : '';
         
         const $item = $(`
-            <a href="#" class="dropdown-item cliente-option" data-cliente-id="${cliente.id}">
-                <div>
-                    <strong>${cliente.nombre}${empresaText}</strong>
-                    <small class="text-muted d-block">
-                        ${documentoText}
-                        ${cliente.correo ? ` • ${cliente.correo}` : ''}
-                        ${cliente.telefono ? ` • ${cliente.telefono}` : ''}
-                    </small>
+            <a href="#" class="dropdown-item cliente-option p-3" data-cliente-id="${cliente.id}">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${cliente.nombre}${empresaText}</div>
+                        <small class="text-muted">
+                            ${documentoText}
+                            ${cliente.correo ? ` • ${cliente.correo}` : ''}
+                            ${cliente.telefono ? ` • ${cliente.telefono}` : ''}
+                        </small>
+                    </div>
+                    <div class="ms-2">
+                        <i class="fas fa-arrow-right text-muted"></i>
+                    </div>
                 </div>
             </a>
         `);
+        
+        if (index < clientes.length - 1) {
+            $item.addClass('border-bottom');
+        }
         
         $item.on('click', function(e) {
             e.preventDefault();
@@ -702,6 +783,17 @@ function mostrarResultadosClientes(clientes, term) {
         
         $results.append($item);
     });
+    
+    // Agregar opción para crear cliente nuevo al final
+    const $createOption = $(`
+        <div class="dropdown-divider"></div>
+        <div class="p-2 text-center">
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#clienteRapidoModal" onclick="precargarDatosModal('${term}')">
+                <i class="fas fa-user-plus me-1"></i>¿No está en la lista? Crear nuevo cliente
+            </button>
+        </div>
+    `);
+    $results.append($createOption);
     
     $results.addClass('show');
 }
@@ -713,14 +805,24 @@ function seleccionarCliente(cliente) {
     $('#cliente_search').val('');
     $('#cliente_results').removeClass('show');
     $('#crear_cliente_nuevo').addClass('d-none');
+    $('#no_results').addClass('d-none');
     
-    // Mostrar información del cliente seleccionado
+    // Mostrar información del cliente seleccionado con animación
     const empresaText = cliente.empresa ? ` - ${cliente.empresa}` : '';
     const documentoText = cliente.documento ? ` (${cliente.documento_formato})` : '';
     
     $('#cliente_nombre_display').text(cliente.nombre + empresaText);
     $('#cliente_info_display').text(documentoText + (cliente.correo ? ` • ${cliente.correo}` : ''));
-    $('#cliente_selected').removeClass('d-none');
+    
+    // Mostrar con efecto de aparición
+    $('#cliente_selected').removeClass('d-none').hide().fadeIn(300);
+    
+    // Scroll suave hacia la siguiente sección
+    setTimeout(() => {
+        $('html, body').animate({
+            scrollTop: $('#cliente_selected').offset().top - 100
+        }, 500);
+    }, 300);
 }
 
 // Limpiar cliente seleccionado
@@ -731,6 +833,24 @@ function limpiarClienteSeleccionado() {
     $('#cliente_selected').addClass('d-none');
     $('#cliente_results').removeClass('show');
     $('#crear_cliente_nuevo').addClass('d-none');
+    $('#no_results').addClass('d-none');
+    $('#cliente_search').focus();
+}
+
+// Precargar datos en el modal de cliente rápido
+function precargarDatosModal(termino = '') {
+    $('#cliente_rapido_nombre').val(termino);
+    $('#cliente_rapido_tipo_documento').val('CC');
+    $('#cliente_rapido_documento').val('');
+    $('#cliente_rapido_correo').val('');
+    $('#cliente_rapido_telefono').val('');
+    $('#cliente_rapido_direccion').val('');
+    $('#cliente_rapido_empresa').val('');
+    
+    // Focus en el campo nombre después de que se abra el modal
+    setTimeout(() => {
+        $('#cliente_rapido_nombre').focus().select();
+    }, 500);
 }
 
 // Ocultar resultados cuando se hace clic fuera
@@ -788,7 +908,7 @@ function crearClienteRapido() {
     
     // Crear cliente via AJAX
     $.ajax({
-        url: '/mod_cotizacion/index.php?controller=cliente&action=createRapido',
+        url: 'index.php?controller=cliente&action=createRapido',
         method: 'POST',
         data: formData,
         dataType: 'json',

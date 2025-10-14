@@ -44,114 +44,17 @@
     <link rel="preload" href="public/js/main.js" as="script">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" as="script">
     
-    <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-        }
-        
-        body {
-            background-color: #f8f9fa;
-        }
-        
-        .navbar-brand {
-            font-weight: bold;
-        }
-        
-        .sidebar {
-            min-height: calc(100vh - 56px);
-            background-color: #343a40;
-        }
-        
-        .sidebar .nav-link {
-            color: #ffffff;
-            padding: 0.75rem 1rem;
-            border-radius: 0.25rem;
-            margin: 0.125rem 0;
-        }
-        
-        .sidebar .nav-link:hover {
-            background-color: #495057;
-            color: #ffffff;
-        }
-        
-        .sidebar .nav-link.active {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-        
-        .main-content {
-            padding: 2rem 0;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid #dee2e6;
-            font-weight: 600;
-        }
-        
-        .btn {
-            border-radius: 0.25rem;
-        }
-        
-        .table th {
-            background-color: #f8f9fa;
-            border-top: none;
-        }
-        
-        .alert {
-            border-radius: 0.25rem;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .stats-card.success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        }
-        
-        .stats-card.warning {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-        }
-        
-        .stats-card.info {
-            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
-        }
-        
-        .stats-card .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        
-        .stats-card .stats-label {
-            font-size: 0.875rem;
-            opacity: 0.9;
-        }
-    </style>
+    <!-- Estilos ya están en style.css -->
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
+            <!-- Botón toggle para sidebar en móviles -->
+            <button class="btn btn-outline-light sidebar-toggle d-md-none me-2" type="button" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            
             <a class="navbar-brand" href="index.php">
                 <i class="fas fa-calculator me-2"></i>
                 Sistema de Cotizaciones
@@ -205,8 +108,14 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar" id="sidebar">
                 <div class="position-sticky pt-3">
+                    <!-- Botón cerrar para móviles -->
+                    <div class="d-md-none text-end p-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="toggleSidebar()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active' : ''; ?>" 

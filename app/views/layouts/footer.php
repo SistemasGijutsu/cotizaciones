@@ -139,6 +139,59 @@
         if ('ontouchstart' in window) {
             document.body.classList.add('touch-device');
         }
+        
+        // Función para toggle de sidebar en móviles
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar) {
+                sidebar.classList.toggle('show');
+                
+                // Crear o remover overlay para móviles
+                if (sidebar.classList.contains('show')) {
+                    if (!overlay) {
+                        const newOverlay = document.createElement('div');
+                        newOverlay.id = 'sidebar-overlay';
+                        newOverlay.className = 'sidebar-overlay d-md-none';
+                        newOverlay.onclick = toggleSidebar;
+                        document.body.appendChild(newOverlay);
+                    }
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+        
+        // Cerrar sidebar al hacer clic fuera en móviles
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            
+            if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('show')) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    toggleSidebar();
+                }
+            }
+        });
+        
+        // Cerrar sidebar al redimensionar ventana
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (window.innerWidth > 768 && sidebar && sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                if (overlay) {
+                    overlay.remove();
+                }
+                document.body.style.overflow = '';
+            }
+        });
     </script>
 </body>
 </html>
