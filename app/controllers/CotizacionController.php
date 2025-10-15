@@ -291,10 +291,10 @@ class CotizacionController extends Controller {
             require_once __DIR__ . '/../helpers/PDFGenerator.php';
             $pdfGenerator = new PDFGenerator();
             
-            // Generar PDF
-            $resultado = $pdfGenerator->generarCotizacionPDF($cotizacion, $cliente, $detalles);
+            // Generar cotización (retorna info completa)
+            $resultado = $pdfGenerator->generarCotizacionInfo($id);
             
-            if ($resultado['success']) {
+            if ($resultado && $resultado['success']) {
                 if ($resultado['type'] === 'html') {
                     // Redirigir a la página HTML para imprimir
                     $this->redirect($resultado['url']);
