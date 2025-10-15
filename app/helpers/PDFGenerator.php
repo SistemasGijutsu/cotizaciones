@@ -310,8 +310,8 @@ class PDFGenerator {
                     
                     <div class="cotizacion-info">
                         <h2>COTIZACIÓN</h2>
-                        <p><strong>Número:</strong> <?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?></p>
-                        <p><strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?></p>
+                        <p><strong>Número:</strong> <?php echo str_pad($cotizacion['id'] ?? 0, 6, '0', STR_PAD_LEFT); ?></p>
+                        <p><strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($cotizacion['fecha'] ?? 'now')); ?></p>
                     </div>
                 </div>
                 
@@ -319,15 +319,15 @@ class PDFGenerator {
                 <div class="info-grid">
                     <div class="info-section">
                         <h3>INFORMACIÓN DEL CLIENTE</h3>
-                        <p><strong>Cliente:</strong> <?php echo $cliente['nombre']; ?></p>
+                        <p><strong>Cliente:</strong> <?php echo $cliente['nombre'] ?? 'N/A'; ?></p>
                         <?php if (!empty($cliente['documento'])): ?>
                         <p><strong>NIT/CC:</strong> <?php echo $cliente['documento']; ?></p>
                         <?php endif; ?>
-                        <p><strong>Dirección:</strong> <?php echo $cliente['direccion']; ?></p>
+                        <p><strong>Dirección:</strong> <?php echo $cliente['direccion'] ?? ''; ?></p>
                         <?php if (!empty($cliente['ciudad'])): ?>
                         <p><strong>Ciudad:</strong> <?php echo $cliente['ciudad']; ?></p>
                         <?php endif; ?>
-                        <p><strong>Teléfono:</strong> <?php echo $cliente['telefono']; ?></p>
+                        <p><strong>Teléfono:</strong> <?php echo $cliente['telefono'] ?? ''; ?></p>
                         <?php if (!empty($cliente['correo'])): ?>
                         <p><strong>Email:</strong> <?php echo $cliente['correo']; ?></p>
                         <?php endif; ?>
@@ -338,11 +338,11 @@ class PDFGenerator {
                     
                     <div class="info-section">
                         <h3>DETALLES DE LA COTIZACIÓN</h3>
-                        <p><strong>Vendedor:</strong> <?php echo isset($_SESSION['username']) ? $_SESSION['username'] : 'Sistema'; ?></p>
+                        <p><strong>Vendedor:</strong> <?php echo $_SESSION['username'] ?? 'Sistema'; ?></p>
                         <p><strong>Fecha de elaboración:</strong> <?php echo date('d/m/Y H:i'); ?></p>
                         <p><strong>Moneda:</strong> Pesos Colombianos (COP)</p>
                         <p><strong>Forma de pago:</strong> Según acuerdo comercial</p>
-                        <p><strong>Tiempo de entrega:</strong> <?php echo $cotizacion['tiempo_entrega'] ?? '15 días hábiles'; ?></p>
+                        <p><strong>Tiempo de entrega:</strong> 15 días hábiles</p>
                     </div>
                 </div>
                 
@@ -362,17 +362,21 @@ class PDFGenerator {
                             <?php 
                             $item_num = 1;
                             foreach ($detalles as $detalle): 
-                                // Usar precio como precio_unitario si no existe
-                                $precio_unitario = $detalle['precio'] ?? $detalle['precio_unitario'] ?? 0;
-                                $total_item = $detalle['cantidad'] * $precio_unitario;
+                                // Los campos vienen de la consulta JOIN: cd.*, a.nombre, a.descripcion
+                                $precio_unitario = floatval($detalle['precio'] ?? 0);
+                                $cantidad = floatval($detalle['cantidad'] ?? 0);
+                                $total_item = $cantidad * $precio_unitario;
                                 $subtotal += $total_item;
                             ?>
                             <tr>
                                 <td class="text-center"><?php echo $item_num++; ?></td>
                                 <td>
-                                    <strong><?php echo $detalle['nombre'] ?? $detalle['descripcion'] ?? 'Artículo'; ?></strong>
+                                    <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
+                                    <?php if (!empty($detalle['descripcion'])): ?>
+                                    <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
+                                    <?php endif; ?>
                                 </td>
-                                <td class="text-center"><?php echo number_format($detalle['cantidad'], 0); ?></td>
+                                <td class="text-center"><?php echo number_format($cantidad, 0); ?></td>
                                 <td class="text-right"><?php echo '$' . number_format($precio_unitario, 0); ?></td>
                                 <td class="text-right"><strong><?php echo '$' . number_format($total_item, 0); ?></strong></td>
                             </tr>
