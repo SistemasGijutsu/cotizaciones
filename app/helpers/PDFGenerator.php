@@ -482,6 +482,46 @@ class PDFGenerator {
         
         file_put_contents($filepath, $html);
         
+        // Retornar solo la ruta del archivo para adjuntar al email
+        return $filepath;
+    }
+    
+    /**
+     * Generar cotización y retornar información completa
+     */
+    public function generarCotizacionInfo($cotizacionId) {
+        // Cargar modelos necesarios
+        require_once __DIR__ . '/../models/Cotizacion.php';
+        require_once __DIR__ . '/../models/Cliente.php';
+        
+        $cotizacionModel = new Cotizacion();
+        $clienteModel = new Cliente();
+        
+        // Obtener datos
+        $cotizacion = $cotizacionModel->getCotizacionCompleta($cotizacionId);
+        if (!$cotizacion) {
+            return false;
+        }
+        
+        $cliente = $clienteModel->getById($cotizacion['id_cliente']);
+        $detalles = $cotizacionModel->getDetallesCotizacion($cotizacionId);
+        
+        // Generar HTML
+        $html = $this->generarHTMLCotizacion($cotizacion, $cliente, $detalles);
+        
+        // Nombre del archivo
+        $filename = 'cotizacion_' . str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) . '_' . date('Y-m-d');
+        
+        $filepath = __DIR__ . '/../../public/temp/' . $filename . '.html';
+        
+        // Crear directorio temporal si no existe
+        $tempDir = dirname($filepath);
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        file_put_contents($filepath, $html);
+        
         return [
             'success' => true,
             'type' => 'html',
