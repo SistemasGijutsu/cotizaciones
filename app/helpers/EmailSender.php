@@ -4,6 +4,9 @@
  * Maneja el envío de cotizaciones y notificaciones por correo
  */
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 class EmailSender {
     
     private $smtpConfig;
@@ -11,11 +14,11 @@ class EmailSender {
     
     public function __construct() {
         $this->smtpConfig = [
-            'host' => 'smtp.gmail.com', // Cambiar por tu servidor SMTP
+            'host' => 'smtp.gmail.com',
             'port' => 587,
-            'username' => '', // Configurar con tu email
-            'password' => '', // Configurar con tu contraseña
-            'from_email' => 'noreply@cotizaciones.com',
+            'username' => 'Sistemas@gijutsudesigns.com', 
+            'password' => 'miwp bllw anii ihtm', // CAMBIAR: Tu contraseña de aplicación de Gmail
+            'from_email' => 'Sistemas@gijutsudesigns.com', // CAMBIAR: Tu email de Gmail
             'from_name' => 'Sistema de Cotizaciones'
         ];
         
@@ -32,6 +35,12 @@ class EmailSender {
      */
     public function enviarCotizacion($datos) {
         try {
+            // Verificar que se haya configurado SMTP
+            if (empty($this->smtpConfig['username']) || empty($this->smtpConfig['password'])) {
+                error_log("EmailSender: SMTP no configurado. Por favor configure username y password en EmailSender.php");
+                return false;
+            }
+
             $destinatario = $datos['destinatario'];
             $asunto = $datos['asunto'];
             $mensaje = $datos['mensaje'];
@@ -39,27 +48,48 @@ class EmailSender {
             $cliente = $datos['cliente'];
             $archivoAdjunto = $datos['archivo_adjunto'] ?? null;
             
-            // Generar contenido HTML del email
-            $htmlContent = $this->generarHTMLEmail($cotizacion, $cliente, $mensaje);
+            // Crear instancia de PHPMailer
+            $mail = new PHPMailer(true);
             
-            // Configurar headers
-            $headers = $this->configurarHeaders($archivoAdjunto);
+            // Configuración del servidor SMTP
+            $mail->isSMTP();
+            $mail->Host = $this->smtpConfig['host'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $this->smtpConfig['username'];
+            $mail->Password = $this->smtpConfig['password'];
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = $this->smtpConfig['port'];
+            $mail->CharSet = 'UTF-8';
+            
+            // Remitente y destinatario
+            $mail->setFrom($this->smtpConfig['from_email'], $this->smtpConfig['from_name']);
+            $mail->addAddress($destinatario);
+            
+            // Contenido del email
+            $mail->isHTML(true);
+            $mail->Subject = $asunto;
+            $mail->Body = $this->generarHTMLEmail($cotizacion, $cliente, $mensaje);
+            $mail->AltBody = strip_tags($mensaje);
+            
+            // Adjuntar archivo si existe
+            if ($archivoAdjunto && file_exists($archivoAdjunto)) {
+                $mail->addAttachment($archivoAdjunto);
+            }
             
             // Enviar email
-            $enviado = mail($destinatario, $asunto, $htmlContent, $headers);
+            $enviado = $mail->send();
             
             if ($enviado) {
-                // Log del envío exitoso
                 $this->logEnvio($destinatario, $asunto, 'success');
                 return true;
             } else {
-                // Log del error
                 $this->logEnvio($destinatario, $asunto, 'error');
                 return false;
             }
             
         } catch (Exception $e) {
-            error_log("Error enviando email: " . $e->getMessage());
+            error_log("Error enviando email con PHPMailer: " . $e->getMessage());
+            $this->logEnvio($destinatario ?? 'unknown', $asunto ?? 'unknown', 'error: ' . $e->getMessage());
             return false;
         }
     }

@@ -10,6 +10,9 @@
 // Iniciar sesión
 session_start();
 
+// Cargar autoloader de Composer
+require_once __DIR__ . '/vendor/autoload.php';
+
 // Configurar reporte de errores para desarrollo
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
