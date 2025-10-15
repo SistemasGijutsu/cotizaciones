@@ -7,8 +7,8 @@ if (!isset($_SESSION['user_id'])) {
 
 // Variables inicializadas desde el controlador
 $cotizacion = $cotizacion ?? [];
-$cliente = $cliente ?? [];
-$detalles = $detalles ?? [];
+$cliente = $cotizacion['cliente'] ?? [];
+$detalles = $cotizacion['detalles'] ?? [];
 ?>
 
 <div class="container-fluid">
@@ -136,26 +136,26 @@ $detalles = $detalles ?? [];
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <div class="h2 text-success">${{ number_format($cotizacion['total'] ?? 0, 2) }}</div>
+                        <div class="h2 text-success">${{ number_format($cotizacion['total_venta'] ?? 0, 2) }}</div>
                         <small class="text-muted">Total de la Cotización</small>
                     </div>
                     
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Subtotal:</span>
-                        <strong>${{ number_format($cotizacion['subtotal'] ?? 0, 2) }}</strong>
+                        <span>Costo Total:</span>
+                        <strong>${{ number_format($cotizacion['total_costo'] ?? 0, 2) }}</strong>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Precio Venta:</span>
+                        <strong class="text-success">${{ number_format($cotizacion['total_venta'] ?? 0, 2) }}</strong>
                     </div>
                     
                     <?php if (($cotizacion['utilidad'] ?? 0) > 0): ?>
-                        <div class="d-flex justify-content-between mb-2">
+                        <div class="d-flex justify-content-between mb-3">
                             <span>Utilidad:</span>
                             <strong class="text-info">${{ number_format($cotizacion['utilidad'], 2) }}</strong>
                         </div>
                     <?php endif; ?>
-                    
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>IVA (16%):</span>
-                        <strong>${{ number_format($cotizacion['iva'] ?? 0, 2) }}</strong>
-                    </div>
                     
                     <hr>
                     
