@@ -66,7 +66,6 @@ class PDFGenerator {
      */
     private function generarHTMLCotizacion($cotizacion, $cliente, $detalles) {
         $subtotal = 0;
-        $totalCosto = 0;
         
         ob_start();
         ?>
@@ -311,10 +310,8 @@ class PDFGenerator {
                     
                     <div class="cotizacion-info">
                         <h2>COTIZACIÓN</h2>
-                        <p><strong>Número:</strong> <?php echo $cotizacion['numero']; ?></p>
+                        <p><strong>Número:</strong> <?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?></p>
                         <p><strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?></p>
-                        <p><strong>Válida hasta:</strong> <?php echo date('d/m/Y', strtotime($cotizacion['fecha_vencimiento'])); ?></p>
-                        <p><strong>Estado:</strong> <span style="color: <?php echo $cotizacion['estado'] == 'activa' ? '#28a745' : '#6c757d'; ?>;"><?php echo ucfirst($cotizacion['estado']); ?></span></p>
                     </div>
                 </div>
                 
@@ -323,11 +320,17 @@ class PDFGenerator {
                     <div class="info-section">
                         <h3>INFORMACIÓN DEL CLIENTE</h3>
                         <p><strong>Cliente:</strong> <?php echo $cliente['nombre']; ?></p>
-                        <p><strong>NIT/CC:</strong> <?php echo $cliente['nit']; ?></p>
+                        <?php if (!empty($cliente['documento'])): ?>
+                        <p><strong>NIT/CC:</strong> <?php echo $cliente['documento']; ?></p>
+                        <?php endif; ?>
                         <p><strong>Dirección:</strong> <?php echo $cliente['direccion']; ?></p>
+                        <?php if (!empty($cliente['ciudad'])): ?>
                         <p><strong>Ciudad:</strong> <?php echo $cliente['ciudad']; ?></p>
+                        <?php endif; ?>
                         <p><strong>Teléfono:</strong> <?php echo $cliente['telefono']; ?></p>
-                        <p><strong>Email:</strong> <?php echo $cliente['email']; ?></p>
+                        <?php if (!empty($cliente['correo'])): ?>
+                        <p><strong>Email:</strong> <?php echo $cliente['correo']; ?></p>
+                        <?php endif; ?>
                         <?php if (!empty($cliente['contacto'])): ?>
                         <p><strong>Contacto:</strong> <?php echo $cliente['contacto']; ?></p>
                         <?php endif; ?>
@@ -349,33 +352,28 @@ class PDFGenerator {
                         <thead>
                             <tr>
                                 <th style="width: 8%;">#</th>
-                                <th style="width: 35%;">Descripción</th>
+                                <th style="width: 40%;">Descripción</th>
                                 <th style="width: 10%;" class="text-center">Cant.</th>
-                                <th style="width: 15%;" class="text-right">Precio Unit.</th>
-                                <th style="width: 15%;" class="text-right">Costo Unit.</th>
-                                <th style="width: 17%;" class="text-right">Total</th>
+                                <th style="width: 18%;" class="text-right">Precio Unit.</th>
+                                <th style="width: 24%;" class="text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php 
                             $item_num = 1;
                             foreach ($detalles as $detalle): 
-                                $total_item = $detalle['cantidad'] * $detalle['precio_unitario'];
-                                $costo_item = $detalle['cantidad'] * ($detalle['precio_costo'] ?? 0);
+                                // Usar precio como precio_unitario si no existe
+                                $precio_unitario = $detalle['precio'] ?? $detalle['precio_unitario'] ?? 0;
+                                $total_item = $detalle['cantidad'] * $precio_unitario;
                                 $subtotal += $total_item;
-                                $totalCosto += $costo_item;
                             ?>
                             <tr>
                                 <td class="text-center"><?php echo $item_num++; ?></td>
                                 <td>
-                                    <strong><?php echo $detalle['nombre_articulo']; ?></strong>
-                                    <?php if (!empty($detalle['descripcion'])): ?>
-                                    <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
-                                    <?php endif; ?>
+                                    <strong><?php echo $detalle['nombre'] ?? $detalle['descripcion'] ?? 'Artículo'; ?></strong>
                                 </td>
                                 <td class="text-center"><?php echo number_format($detalle['cantidad'], 0); ?></td>
-                                <td class="text-right"><?php echo '$' . number_format($detalle['precio_unitario'], 0); ?></td>
-                                <td class="text-right" style="color: #dc3545;"><?php echo '$' . number_format($detalle['precio_costo'] ?? 0, 0); ?></td>
+                                <td class="text-right"><?php echo '$' . number_format($precio_unitario, 0); ?></td>
                                 <td class="text-right"><strong><?php echo '$' . number_format($total_item, 0); ?></strong></td>
                             </tr>
                             <?php endforeach; ?>
@@ -390,43 +388,24 @@ class PDFGenerator {
                             <td class="total-label">Subtotal:</td>
                             <td class="text-right"><?php echo '$' . number_format($subtotal, 0); ?></td>
                         </tr>
-                        <?php 
-                        $iva = $subtotal * 0.19; // IVA del 19%
-                        $total = $subtotal + $iva;
-                        $utilidad = $subtotal - $totalCosto;
-                        $margen = $totalCosto > 0 ? (($utilidad / $totalCosto) * 100) : 0;
-                        ?>
-                        <tr>
-                            <td class="total-label">IVA (19%):</td>
-                            <td class="text-right"><?php echo '$' . number_format($iva, 0); ?></td>
-                        </tr>
                         <tr class="total-final">
                             <td>TOTAL:</td>
-                            <td class="text-right"><?php echo '$' . number_format($total, 0); ?></td>
+                            <td class="text-right"><?php echo '$' . number_format($cotizacion['total_venta'], 0); ?></td>
                         </tr>
-                        <tr style="background: #d4edda; color: #155724;">
-                            <td class="total-label">Costo Total:</td>
-                            <td class="text-right"><?php echo '$' . number_format($totalCosto, 0); ?></td>
-                        </tr>
+                        <?php if ($cotizacion['utilidad'] > 0): ?>
                         <tr style="background: #d1ecf1; color: #0c5460;">
                             <td class="total-label">Utilidad:</td>
-                            <td class="text-right"><?php echo '$' . number_format($utilidad, 0) . ' (' . number_format($margen, 1) . '%)'; ?></td>
+                            <td class="text-right"><?php echo '$' . number_format($cotizacion['utilidad'], 0); ?></td>
                         </tr>
+                        <?php endif; ?>
                     </table>
                 </div>
                 
                 <!-- Validez y Observaciones -->
                 <div class="validez">
                     <h4>⏰ VALIDEZ DE LA COTIZACIÓN</h4>
-                    <p>Esta cotización tiene una validez de <?php echo $cotizacion['dias_validez'] ?? 30; ?> días calendario a partir de la fecha de emisión.</p>
+                    <p>Esta cotización tiene una validez de 30 días calendario a partir de la fecha de emisión.</p>
                 </div>
-                
-                <?php if (!empty($cotizacion['observaciones'])): ?>
-                <div class="observaciones">
-                    <h4>📝 OBSERVACIONES</h4>
-                    <p><?php echo nl2br($cotizacion['observaciones']); ?></p>
-                </div>
-                <?php endif; ?>
                 
                 <!-- Footer -->
                 <div class="footer">
