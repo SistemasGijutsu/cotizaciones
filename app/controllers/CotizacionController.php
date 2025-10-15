@@ -75,18 +75,11 @@ class CotizacionController extends Controller {
      * Guardar nueva cotización
      */
     public function store() {
-        // DEBUG: Log para verificar qué se está recibiendo
-        error_log("=== DEBUG COTIZACIÓN ===");
-        error_log("POST data: " . print_r($_POST, true));
-        
         $clienteId = $this->getPostData(['cliente_id'])['cliente_id'];
-        error_log("Cliente ID: " . $clienteId);
         
         // Obtener items de la cotización
         $items = [];
         if (isset($_POST['items']) && is_array($_POST['items'])) {
-            error_log("Items recibidos: " . print_r($_POST['items'], true));
-            
             foreach ($_POST['items'] as $item) {
                 // Verificar que tenga los campos necesarios
                 if (isset($item['id']) && isset($item['tipo']) && isset($item['cantidad']) && $item['cantidad'] > 0) {
@@ -104,32 +97,24 @@ class CotizacionController extends Controller {
             }
         }
         
-        error_log("Items procesados: " . print_r($items, true));
-        
         // Validar que haya cliente y items
         if (empty($clienteId)) {
-            error_log("ERROR: No hay cliente seleccionado");
             $this->setAlert('Debe seleccionar un cliente', 'error');
             $this->redirect('index.php?controller=cotizacion&action=create');
             return;
         }
         
         if (empty($items)) {
-            error_log("ERROR: No hay items");
             $this->setAlert('Debe agregar al menos un artículo a la cotización', 'error');
             $this->redirect('index.php?controller=cotizacion&action=create');
             return;
         }
         
         try {
-            error_log("Intentando crear cotización...");
             $cotizacionId = $this->cotizacionModel->createCotizacionCompleta($clienteId, $items);
-            error_log("Cotización creada con ID: " . $cotizacionId);
             $this->setAlert('Cotización creada exitosamente', 'success');
             $this->redirect('index.php?controller=cotizacion&action=show&id=' . $cotizacionId);
         } catch (Exception $e) {
-            error_log("ERROR al crear cotización: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
             $this->setAlert('Error al crear la cotización: ' . $e->getMessage(), 'error');
             $this->redirect('index.php?controller=cotizacion&action=create');
         }
@@ -370,13 +355,14 @@ class CotizacionController extends Controller {
                 ]);
                 
                 if ($enviado) {
-                    Helper::showAlert('Cotización enviada por email correctamente', 'success');
+                    $this->setAlert('Cotización enviada por email correctamente', 'success');
                 } else {
-                    Helper::showAlert('Error al enviar la cotización por email', 'error');
+                    // En desarrollo local, la función mail() no funciona sin configurar SMTP
+                    $this->setAlert('NOTA: En desarrollo local, el email no se envía realmente. Para enviar emails reales, configure SMTP en php.ini o use una librería como PHPMailer.', 'warning');
                 }
                 
             } catch (Exception $e) {
-                Helper::showAlert('Error al enviar email: ' . $e->getMessage(), 'error');
+                $this->setAlert('Error al enviar email: ' . $e->getMessage(), 'error');
             }
             
             $this->redirect('index.php?controller=cotizacion&action=show&id=' . $id);
