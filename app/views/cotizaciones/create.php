@@ -36,7 +36,7 @@ $paquetes = $paquetes ?? [];
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="cliente_select" class="form-label">Seleccionar Cliente *</label>
-                                <select class="form-select form-select-lg" id="cliente_select" required>
+                                <select class="form-select form-select-lg" id="cliente_select" name="cliente_id" required>
                                     <option value="">-- Seleccione un cliente --</option>
                                     <?php foreach ($clientes as $cliente): ?>
                                         <option value="<?= $cliente['id'] ?>" 
@@ -105,8 +105,6 @@ $paquetes = $paquetes ?? [];
                             </div>
                         </div>
 
-                        <!-- Cliente ID hidden -->
-                        <input type="hidden" id="cliente_id" name="cliente_id">
                     </div>
                 </div>
 
@@ -321,13 +319,12 @@ $paquetes = $paquetes ?? [];
 <script>
 var itemCounter = 0;
 $(document).ready(function() {
-    // Selector simple de clientes
+    // Selector simple de clientes - solo llena los campos de información
     $('#cliente_select').change(function() {
         const $option = $(this).find('option:selected');
         
         if (!$option.val()) {
             // Limpiar campos
-            $('#cliente_id').val('');
             $('#nombre_apellidos').val('');
             $('#cedula').val('');
             $('#correo').val('');
@@ -339,7 +336,6 @@ $(document).ready(function() {
         }
         
         // Llenar los campos con la información del cliente
-        const id = $option.val();
         const nombre = $option.data('nombre');
         const documento = $option.data('documento');
         const tipo = $option.data('tipo');
@@ -347,7 +343,6 @@ $(document).ready(function() {
         const telefono = $option.data('telefono');
         const direccion = $option.data('direccion');
         
-        $('#cliente_id').val(id);
         $('#nombre_apellidos').val(nombre);
         $('#cedula').val(documento);
         $('#tipo_documento').val(tipo);
@@ -358,26 +353,6 @@ $(document).ready(function() {
         // Mostrar indicador de cliente seleccionado
         $('#cliente_seleccionado_info').removeClass('d-none');
         $('#info_cliente_texto').text(nombre + ' - ' + documento + (correo ? ' • ' + correo : ''));
-        
-        console.log('Cliente seleccionado:', nombre);
-        console.log('Cliente ID asignado:', id);
-        console.log('Valor del campo hidden cliente_id:', $('#cliente_id').val());
-    });
-    
-    // Debug: Verificar datos antes de enviar el formulario
-    $('#cotizacionForm').submit(function(e) {
-        console.log('=== ENVIANDO FORMULARIO ===');
-        console.log('Cliente ID:', $('#cliente_id').val());
-        console.log('Items en tabla:', $('#items_body tr:not(#no_items)').length);
-        
-        const clienteId = $('#cliente_id').val();
-        if (!clienteId) {
-            e.preventDefault();
-            alert('ERROR: El campo cliente_id está vacío. Por favor seleccione un cliente nuevamente.');
-            return false;
-        }
-        
-        console.log('Formulario válido, enviando...');
     });
 });
 
