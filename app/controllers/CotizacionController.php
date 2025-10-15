@@ -337,11 +337,7 @@ class CotizacionController extends Controller {
                 $detalles = $this->cotizacionModel->getDetallesCotizacion($id);
                 
                 // Generar PDF
-                require_once __DIR__ . '/../helpers/PDFGenerator.php';
-                $pdfGenerator = new PDFGenerator();
-                $resultado = $pdfGenerator->generarCotizacionPDF($cotizacion, $cliente, $detalles);
-                
-                // Enviar email
+                // Enviar email (el PDF se genera automáticamente dentro del EmailSender)
                 require_once __DIR__ . '/../helpers/EmailSender.php';
                 $emailSender = new EmailSender();
                 
@@ -350,8 +346,7 @@ class CotizacionController extends Controller {
                     'asunto' => $asunto,
                     'mensaje' => $mensaje,
                     'cotizacion' => $cotizacion,
-                    'cliente' => $cliente,
-                    'archivo_adjunto' => $resultado['type'] === 'html' ? $resultado['filepath'] : null
+                    'cliente' => $cliente
                 ]);
                 
                 if ($enviado) {
