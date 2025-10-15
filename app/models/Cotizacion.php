@@ -30,14 +30,8 @@ class Cotizacion extends Model {
             // Calcular totales
             $totales = $this->calculateTotales($items);
             
-            // Generar código si no se proporciona
-            if (!$codigo) {
-                $codigo = $this->generateCotizacionCode();
-            }
-            
             // Crear la cotización principal
             $cotizacionData = [
-                'codigo' => $codigo,
                 'id_cliente' => $clienteId,
                 'fecha' => date('Y-m-d H:i:s'),
                 'total_costo' => $totales['total_costo'],
@@ -66,8 +60,8 @@ class Cotizacion extends Model {
      */
     private function createCotizacion($data) {
         $sql = "INSERT INTO {$this->table} 
-                (codigo, id_cliente, fecha, total_costo, total_venta, utilidad) 
-                VALUES (:codigo, :id_cliente, :fecha, :total_costo, :total_venta, :utilidad)";
+                (id_cliente, fecha, total_costo, total_venta, utilidad) 
+                VALUES (:id_cliente, :fecha, :total_costo, :total_venta, :utilidad)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($data);
