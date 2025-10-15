@@ -68,13 +68,15 @@ class EmailSender {
      * Generar HTML para el email
      */
     private function generarHTMLEmail($cotizacion, $cliente, $mensaje) {
+        $numeroFormateado = str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT);
+        
         $html = '
         <!DOCTYPE html>
         <html lang="es">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Cotización ' . $cotizacion['numero'] . '</title>
+            <title>Cotización ' . $numeroFormateado . '</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -189,25 +191,21 @@ class EmailSender {
                 </div>
                 
                 <div class="cotizacion-info">
-                    <h2>Cotización #' . $cotizacion['numero'] . '</h2>
+                    <h2>Cotización #' . $numeroFormateado . '</h2>
                     
                     <div class="info-grid">
                         <div class="info-item">
                             <strong>Cliente:</strong><br>
-                            ' . $cliente['nombre'] . '
+                            ' . htmlspecialchars($cliente['nombre']) . '
                         </div>
                         <div class="info-item">
                             <strong>Fecha:</strong><br>
                             ' . date('d/m/Y', strtotime($cotizacion['fecha'])) . '
                         </div>
                         <div class="info-item">
-                            <strong>Válida hasta:</strong><br>
-                            ' . date('d/m/Y', strtotime($cotizacion['fecha_vencimiento'])) . '
-                        </div>
-                        <div class="info-item">
-                            <strong>Estado:</strong><br>
-                            <span style="color: ' . ($cotizacion['estado'] == 'activa' ? '#28a745' : '#6c757d') . ';">
-                                ' . ucfirst($cotizacion['estado']) . '
+                            <strong>Total:</strong><br>
+                            <span style="color: #28a745; font-weight: bold;">
+                                $' . number_format($cotizacion['total_venta'], 0) . '
                             </span>
                         </div>
                     </div>

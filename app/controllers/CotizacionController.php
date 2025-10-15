@@ -340,9 +340,10 @@ class CotizacionController extends Controller {
         }
         
         if ($this->isPost()) {
-            $email = $this->getPostData('email');
-            $asunto = $this->getPostData('asunto');
-            $mensaje = $this->getPostData('mensaje');
+            $postData = $this->getPostData(['email', 'asunto', 'mensaje']);
+            $email = $postData['email'];
+            $asunto = $postData['asunto'];
+            $mensaje = $postData['mensaje'];
             
             try {
                 // Obtener datos de la cotización

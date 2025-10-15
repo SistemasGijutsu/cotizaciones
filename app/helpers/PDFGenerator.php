@@ -30,7 +30,7 @@ class PDFGenerator {
         $html = $this->generarHTMLCotizacion($cotizacion, $cliente, $detalles);
         
         // Nombre del archivo
-        $filename = 'cotizacion_' . $cotizacion['numero'] . '_' . date('Y-m-d') . '.pdf';
+        $filename = 'cotizacion_' . str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) . '_' . date('Y-m-d') . '.pdf';
         
         // Por ahora, generar HTML para imprimir
         // En el futuro se puede implementar TCPDF u otra librería
