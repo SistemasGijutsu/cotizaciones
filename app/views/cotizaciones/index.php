@@ -165,38 +165,41 @@ include_once 'app/views/layouts/header.php';
 <div class="row mt-4">
     <div class="col-md-3">
         <div class="stats-card success">
-            <div class="stats-number"><?php echo count(array_filter($cotizaciones, function($c) { return $c['estado'] == 'activa'; })); ?></div>
-            <div class="stats-label">Cotizaciones Activas</div>
+            <div class="stats-number"><?php echo count($cotizaciones); ?></div>
+            <div class="stats-label">Total Cotizaciones</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stats-card info">
-            <div class="stats-number"><?php echo count(array_filter($cotizaciones, function($c) { return $c['estado'] == 'aprobada'; })); ?></div>
-            <div class="stats-label">Aprobadas</div>
+            <div class="stats-number">
+                <?php 
+                $totalVenta = array_sum(array_column($cotizaciones, 'total_venta'));
+                echo '$' . number_format($totalVenta, 0);
+                ?>
+            </div>
+            <div class="stats-label">Ventas Totales</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stats-card warning">
             <div class="stats-number">
                 <?php 
-                $vencidas = array_filter($cotizaciones, function($c) { 
-                    return strtotime($c['fecha_vencimiento']) < time() && $c['estado'] == 'activa'; 
-                });
-                echo count($vencidas);
+                $totalUtilidad = array_sum(array_column($cotizaciones, 'utilidad'));
+                echo '$' . number_format($totalUtilidad, 0);
                 ?>
             </div>
-            <div class="stats-label">Vencidas</div>
+            <div class="stats-label">Utilidad Total</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stats-card">
             <div class="stats-number">
                 <?php 
-                $total = array_sum(array_column($cotizaciones, 'total'));
-                echo '$' . number_format($total / 1000000, 1) . 'M';
+                $totalCosto = array_sum(array_column($cotizaciones, 'total_costo'));
+                echo '$' . number_format($totalCosto, 0);
                 ?>
             </div>
-            <div class="stats-label">Valor Total</div>
+            <div class="stats-label">Costos Totales</div>
         </div>
     </div>
 </div>
