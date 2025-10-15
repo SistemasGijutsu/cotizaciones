@@ -100,46 +100,28 @@ include_once 'app/views/layouts/header.php';
                         <?php foreach ($cotizaciones as $cotizacion): ?>
                             <tr>
                                 <td>
-                                    <strong class="text-primary"><?php echo $cotizacion['numero']; ?></strong>
+                                    <strong class="text-primary">#<?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?></strong>
                                 </td>
                                 <td>
                                     <div>
-                                        <strong><?php echo $cotizacion['cliente_nombre']; ?></strong>
+                                        <strong><?php echo htmlspecialchars($cotizacion['cliente_nombre'] ?? 'N/A'); ?></strong>
                                         <br>
-                                        <small class="text-muted"><?php echo $cotizacion['cliente_email']; ?></small>
+                                        <small class="text-muted"><?php echo htmlspecialchars($cotizacion['cliente_correo'] ?? 'Sin email'); ?></small>
                                     </div>
                                 </td>
                                 <td>
                                     <?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?>
                                 </td>
                                 <td>
-                                    <?php 
-                                    $vencimiento = strtotime($cotizacion['fecha_vencimiento']);
-                                    $hoy = time();
-                                    $class = $vencimiento < $hoy ? 'text-danger' : 'text-success';
-                                    ?>
-                                    <span class="<?php echo $class; ?>">
-                                        <?php echo date('d/m/Y', $vencimiento); ?>
-                                    </span>
+                                    <span class="text-muted">-</span>
                                 </td>
                                 <td>
                                     <strong class="text-success">
-                                        <?php echo '$' . number_format($cotizacion['total'], 0); ?>
+                                        $<?php echo number_format($cotizacion['total_venta'] ?? 0, 0); ?>
                                     </strong>
                                 </td>
                                 <td>
-                                    <?php
-                                    $badgeClass = [
-                                        'activa' => 'bg-success',
-                                        'vencida' => 'bg-danger',
-                                        'aprobada' => 'bg-primary',
-                                        'rechazada' => 'bg-secondary'
-                                    ];
-                                    $class = $badgeClass[$cotizacion['estado']] ?? 'bg-secondary';
-                                    ?>
-                                    <span class="badge <?php echo $class; ?>">
-                                        <?php echo ucfirst($cotizacion['estado']); ?>
-                                    </span>
+                                    <span class="badge bg-success">Activa</span>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
