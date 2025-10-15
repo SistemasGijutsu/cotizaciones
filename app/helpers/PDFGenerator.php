@@ -24,6 +24,30 @@ class PDFGenerator {
     }
     
     /**
+     * Generar cotización por ID (obtiene datos de la BD)
+     */
+    public function generarCotizacion($cotizacionId) {
+        // Cargar modelos necesarios
+        require_once __DIR__ . '/../models/Cotizacion.php';
+        require_once __DIR__ . '/../models/Cliente.php';
+        
+        $cotizacionModel = new Cotizacion();
+        $clienteModel = new Cliente();
+        
+        // Obtener datos
+        $cotizacion = $cotizacionModel->getCotizacionCompleta($cotizacionId);
+        if (!$cotizacion) {
+            return false;
+        }
+        
+        $cliente = $clienteModel->getById($cotizacion['id_cliente']);
+        $detalles = $cotizacionModel->getDetallesCotizacion($cotizacionId);
+        
+        // Generar PDF
+        return $this->generarCotizacionPDF($cotizacion, $cliente, $detalles);
+    }
+    
+    /**
      * Generar PDF de cotización
      */
     public function generarCotizacionPDF($cotizacion, $cliente, $detalles) {
