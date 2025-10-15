@@ -8,7 +8,7 @@ include_once 'app/views/layouts/header.php';
         <i class="fas fa-envelope me-2"></i>
         Enviar Cotización por Email
     </h2>
-    <a href="index.php?controller=cotizacion&action=view&id=<?php echo $cotizacion['id']; ?>" class="btn btn-outline-secondary">
+    <a href="index.php?controller=cotizacion&action=show&id=<?php echo $cotizacion['id']; ?>" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left me-1"></i> Volver
     </a>
 </div>
@@ -60,7 +60,7 @@ Sistema de Cotizaciones</textarea>
                     </div>
                     
                     <div class="d-flex justify-content-between">
-                        <a href="index.php?controller=cotizacion&action=view&id=<?php echo $cotizacion['id']; ?>" 
+                        <a href="index.php?controller=cotizacion&action=show&id=<?php echo $cotizacion['id']; ?>" 
                            class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i> Cancelar
                         </a>

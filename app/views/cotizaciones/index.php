@@ -125,7 +125,7 @@ include_once 'app/views/layouts/header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="index.php?controller=cotizacion&action=view&id=<?php echo $cotizacion['id']; ?>" 
+                                        <a href="index.php?controller=cotizacion&action=show&id=<?php echo $cotizacion['id']; ?>" 
                                            class="btn btn-outline-info" title="Ver detalles">
                                             <i class="fas fa-eye"></i>
                                         </a>

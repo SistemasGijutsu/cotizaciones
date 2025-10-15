@@ -379,7 +379,7 @@ class CotizacionController extends Controller {
                 Helper::showAlert('Error al enviar email: ' . $e->getMessage(), 'error');
             }
             
-            $this->redirect('index.php?controller=cotizacion&action=view&id=' . $id);
+            $this->redirect('index.php?controller=cotizacion&action=show&id=' . $id);
         }
         
         // Mostrar formulario de envío
