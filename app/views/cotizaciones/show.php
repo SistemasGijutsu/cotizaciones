@@ -113,10 +113,10 @@ $detalles = $cotizacion['detalles'] ?? [];
                                         <td>
                                             <span class="badge bg-secondary"><?= $detalle['cantidad'] ?></span>
                                         </td>
-                                        <td>$<?= number_format($detalle['precio_unitario'], 2) ?></td>
+                                        <td>$<?= number_format($detalle['precio_venta'] ?? 0, 2) ?></td>
                                         <td>
                                             <strong class="text-success">
-                                                $<?= number_format($detalle['cantidad'] * $detalle['precio_unitario'], 2) ?>
+                                                $<?= number_format($detalle['cantidad'] * ($detalle['precio_venta'] ?? 0), 2) ?>
                                             </strong>
                                         </td>
                                     </tr>
@@ -136,24 +136,24 @@ $detalles = $cotizacion['detalles'] ?? [];
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <div class="h2 text-success">${{ number_format($cotizacion['total_venta'] ?? 0, 2) }}</div>
+                        <div class="h2 text-success">$<?= number_format($cotizacion['total_venta'] ?? 0, 2) ?></div>
                         <small class="text-muted">Total de la Cotización</small>
                     </div>
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Costo Total:</span>
-                        <strong>${{ number_format($cotizacion['total_costo'] ?? 0, 2) }}</strong>
+                        <strong>$<?= number_format($cotizacion['total_costo'] ?? 0, 2) ?></strong>
                     </div>
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Precio Venta:</span>
-                        <strong class="text-success">${{ number_format($cotizacion['total_venta'] ?? 0, 2) }}</strong>
+                        <strong class="text-success">$<?= number_format($cotizacion['total_venta'] ?? 0, 2) ?></strong>
                     </div>
                     
                     <?php if (($cotizacion['utilidad'] ?? 0) > 0): ?>
                         <div class="d-flex justify-content-between mb-3">
                             <span>Utilidad:</span>
-                            <strong class="text-info">${{ number_format($cotizacion['utilidad'], 2) }}</strong>
+                            <strong class="text-info">$<?= number_format($cotizacion['utilidad'], 2) ?></strong>
                         </div>
                     <?php endif; ?>
                     
