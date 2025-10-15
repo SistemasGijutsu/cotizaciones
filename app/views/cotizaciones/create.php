@@ -360,6 +360,24 @@ $(document).ready(function() {
         $('#info_cliente_texto').text(nombre + ' - ' + documento + (correo ? ' • ' + correo : ''));
         
         console.log('Cliente seleccionado:', nombre);
+        console.log('Cliente ID asignado:', id);
+        console.log('Valor del campo hidden cliente_id:', $('#cliente_id').val());
+    });
+    
+    // Debug: Verificar datos antes de enviar el formulario
+    $('#cotizacionForm').submit(function(e) {
+        console.log('=== ENVIANDO FORMULARIO ===');
+        console.log('Cliente ID:', $('#cliente_id').val());
+        console.log('Items en tabla:', $('#items_body tr:not(#no_items)').length);
+        
+        const clienteId = $('#cliente_id').val();
+        if (!clienteId) {
+            e.preventDefault();
+            alert('ERROR: El campo cliente_id está vacío. Por favor seleccione un cliente nuevamente.');
+            return false;
+        }
+        
+        console.log('Formulario válido, enviando...');
     });
 });
 
