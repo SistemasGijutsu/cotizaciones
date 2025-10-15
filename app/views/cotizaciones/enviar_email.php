@@ -28,7 +28,7 @@ include_once 'app/views/layouts/header.php';
                             Email de destino <span class="text-danger">*</span>
                         </label>
                         <input type="email" class="form-control" id="email" name="email" 
-                               value="<?php echo $cliente['email']; ?>" required>
+                               value="<?php echo $cliente['correo'] ?? ''; ?>" required>
                         <div class="form-text">
                             Email del cliente donde se enviará la cotización
                         </div>
@@ -40,7 +40,7 @@ include_once 'app/views/layouts/header.php';
                             Asunto del email <span class="text-danger">*</span>
                         </label>
                         <input type="text" class="form-control" id="asunto" name="asunto" 
-                               value="Cotización #<?php echo $cotizacion['numero']; ?> - <?php echo $cliente['nombre']; ?>" required>
+                               value="Cotización #<?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?> - <?php echo $cliente['nombre']; ?>" required>
                     </div>
                     
                     <div class="mb-4">
@@ -51,9 +51,7 @@ include_once 'app/views/layouts/header.php';
                         <textarea class="form-control" id="mensaje" name="mensaje" rows="6" 
                                   placeholder="Escriba un mensaje personalizado para acompañar la cotización...">Estimado(a) <?php echo $cliente['nombre']; ?>,
 
-Adjunto encontrará la cotización #<?php echo $cotizacion['numero']; ?> solicitada, con fecha de <?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?>.
-
-Esta cotización tiene una validez hasta el <?php echo date('d/m/Y', strtotime($cotizacion['fecha_vencimiento'])); ?>.
+Adjunto encontrará la cotización #<?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?> solicitada, con fecha de <?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?>.
 
 Quedamos atentos a sus comentarios y esperamos poder servirle pronto.
 
@@ -87,7 +85,7 @@ Sistema de Cotizaciones</textarea>
                 <table class="table table-sm">
                     <tr>
                         <td><strong>Número:</strong></td>
-                        <td><?php echo $cotizacion['numero']; ?></td>
+                        <td>#<?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Cliente:</strong></td>
@@ -95,32 +93,29 @@ Sistema de Cotizaciones</textarea>
                     </tr>
                     <tr>
                         <td><strong>Email:</strong></td>
-                        <td><?php echo $cliente['email']; ?></td>
+                        <td><?php echo $cliente['correo'] ?? 'No disponible'; ?></td>
                     </tr>
                     <tr>
                         <td><strong>Fecha:</strong></td>
                         <td><?php echo date('d/m/Y', strtotime($cotizacion['fecha'])); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Vencimiento:</strong></td>
-                        <td><?php echo date('d/m/Y', strtotime($cotizacion['fecha_vencimiento'])); ?></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Estado:</strong></td>
-                        <td>
-                            <span class="badge bg-<?php echo $cotizacion['estado'] == 'activa' ? 'success' : 'secondary'; ?>">
-                                <?php echo ucfirst($cotizacion['estado']); ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Total:</strong></td>
+                        <td><strong>Total Venta:</strong></td>
                         <td>
                             <strong class="text-success">
-                                <?php echo '$' . number_format($cotizacion['total'], 0); ?>
+                                $<?php echo number_format($cotizacion['total_venta'], 0); ?>
                             </strong>
                         </td>
                     </tr>
+                    <tr>
+                        <td><strong>Utilidad:</strong></td>
+                        <td>
+                            <strong class="text-info">
+                                $<?php echo number_format($cotizacion['utilidad'], 0); ?>
+                            </strong>
+                        </td>
+                    </tr>
+                </table>
                 </table>
             </div>
         </div>
