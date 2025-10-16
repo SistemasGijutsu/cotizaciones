@@ -53,8 +53,8 @@ class PDFGenerator {
     public function generarCotizacionPDF($cotizacion, $cliente, $detalles) {
         $html = $this->generarHTMLCotizacion($cotizacion, $cliente, $detalles);
         
-        // Nombre del archivo
-        $filename = 'cotizacion_' . str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) . '_' . date('Y-m-d') . '.pdf';
+    // Nombre base del archivo (sin extensión)
+    $filename = 'cotizacion_' . str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) . '_' . date('Y-m-d');
         
         // Por ahora, generar HTML para imprimir
         // En el futuro se puede implementar TCPDF u otra librería
@@ -500,28 +500,18 @@ class PDFGenerator {
         $cliente = $clienteModel->getById($cotizacion['id_cliente']);
         $detalles = $cotizacionModel->getDetallesCotizacion($cotizacionId);
         
-        // Generar HTML
-        $html = $this->generarHTMLCotizacion($cotizacion, $cliente, $detalles);
-        
-        // Nombre del archivo
-        $filename = 'cotizacion_' . str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) . '_' . date('Y-m-d');
-        
-        $filepath = __DIR__ . '/../../public/temp/' . $filename . '.html';
-        
-        // Crear directorio temporal si no existe
-        $tempDir = dirname($filepath);
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-        
-        file_put_contents($filepath, $html);
-        
+        // Generar PDF (o HTML si Dompdf falla)
+        $pdfPath = $this->generarCotizacionPDF($cotizacion, $cliente, $detalles);
+
+        $ext = pathinfo($pdfPath, PATHINFO_EXTENSION);
+        $filename = basename($pdfPath);
+
         return [
             'success' => true,
-            'type' => 'html',
-            'filepath' => $filepath,
-            'url' => 'public/temp/' . $filename . '.html?print=1',
-            'filename' => $filename . '.html'
+            'type' => $ext === 'pdf' ? 'pdf' : 'html',
+            'filepath' => $pdfPath,
+            'url' => 'public/temp/' . $filename . ($ext === 'html' ? '?print=1' : ''),
+            'filename' => $filename
         ];
     }
     
