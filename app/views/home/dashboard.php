@@ -95,7 +95,7 @@
                                 <?php foreach ($cotizacionesRecientes as $cotizacion): ?>
                                     <tr>
                                         <td>
-                                            <strong><?php echo $cotizacion['codigo']; ?></strong>
+                                            <strong><?php echo str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT); ?></strong>
                                         </td>
                                         <td><?php echo $cotizacion['cliente_nombre']; ?></td>
                                         <td><?php echo $cotizacion['fecha_formato']; ?></td>
