@@ -53,8 +53,16 @@ class EmailSender {
             if (!$archivoAdjunto) {
                 require_once __DIR__ . '/PDFGenerator.php';
                 $pdfGenerator = new PDFGenerator();
-                $archivoAdjunto = $pdfGenerator->generarCotizacion($cotizacion['id']);
-                $pdfGenerado = true; // Marcar para eliminar después
+                // Generar una nueva versión del HTML imprimible y obtener la ruta
+                $info = $pdfGenerator->generarCotizacionInfo($cotizacion['id']);
+                if ($info && isset($info['filepath'])) {
+                    $archivoAdjunto = $info['filepath'];
+                    $pdfGenerado = true; // Marcar para eliminar después
+                } else {
+                    // Fallback: intentar generar la versión simple
+                    $archivoAdjunto = $pdfGenerator->generarCotizacion($cotizacion['id']);
+                    $pdfGenerado = true;
+                }
             }
             
             // Crear instancia de PHPMailer
