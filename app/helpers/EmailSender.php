@@ -88,13 +88,12 @@ class EmailSender {
             $mail->Body = $this->generarHTMLEmailSimple($cotizacion, $cliente, $mensaje);
             $mail->AltBody = strip_tags($mensaje);
             
-            // Adjuntar PDF
+            // Adjuntar PDF o HTML
             if ($archivoAdjunto && file_exists($archivoAdjunto)) {
                 $numeroFormateado = str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT);
-                $mail->addAttachment(
-                    $archivoAdjunto, 
-                    'Cotizacion_' . $numeroFormateado . '.pdf'
-                );
+                $ext = pathinfo($archivoAdjunto, PATHINFO_EXTENSION);
+                $attachName = 'Cotizacion_' . $numeroFormateado . '.' . ($ext ?: 'pdf');
+                $mail->addAttachment($archivoAdjunto, $attachName);
             }
             
             // Enviar email
