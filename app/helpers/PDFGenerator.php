@@ -451,18 +451,33 @@ class PDFGenerator {
      * Generar HTML imprimible
      */
     private function generarHTMLImprimible($html, $filename) {
-        $filepath = __DIR__ . '/../../public/temp/' . $filename . '.html';
-        
-        // Crear directorio temporal si no existe
-        $tempDir = dirname($filepath);
+        $tempDir = __DIR__ . '/../../public/temp/';
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
-        
-        file_put_contents($filepath, $html);
-        
-        // Retornar solo la ruta del archivo para adjuntar al email
-        return $filepath;
+
+        // Guardar HTML temporal
+        $htmlPath = $tempDir . $filename . '.html';
+        file_put_contents($htmlPath, $html);
+
+        // Generar PDF usando Dompdf
+        require_once __DIR__ . '/../../vendor/autoload.php';
+        try {
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $pdfPath = $tempDir . $filename . '.pdf';
+            file_put_contents($pdfPath, $dompdf->output());
+
+            // Retornar la ruta del PDF generado
+            return $pdfPath;
+        } catch (Exception $e) {
+            // Si falla Dompdf, retornar el HTML temporal como fallback
+            error_log('PDFGenerator: Error generando PDF con Dompdf: ' . $e->getMessage());
+            return $htmlPath;
+        }
     }
     
     /**
