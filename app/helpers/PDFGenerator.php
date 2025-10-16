@@ -74,7 +74,7 @@ class PDFGenerator {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Cotización #<?php echo $cotizacion['numero']; ?></title>
+            <title>Cotización #<?php echo str_pad($cotizacion['id'] ?? 0, 6, '0', STR_PAD_LEFT); ?></title>
             <style>
                 * {
                     margin: 0;
@@ -396,12 +396,7 @@ class PDFGenerator {
                             <td>TOTAL:</td>
                             <td class="text-right"><?php echo '$' . number_format($cotizacion['total_venta'], 0); ?></td>
                         </tr>
-                        <?php if ($cotizacion['utilidad'] > 0): ?>
-                        <tr style="background: #d1ecf1; color: #0c5460;">
-                            <td class="total-label">Utilidad:</td>
-                            <td class="text-right"><?php echo '$' . number_format($cotizacion['utilidad'], 0); ?></td>
-                        </tr>
-                        <?php endif; ?>
+                        <!-- Utilidad removida del desglose en PDF (solo se muestra en el sistema) -->
                     </table>
                 </div>
                 
