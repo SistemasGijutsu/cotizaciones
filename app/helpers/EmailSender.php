@@ -91,9 +91,14 @@ class EmailSender {
             // Adjuntar PDF o HTML
             if ($archivoAdjunto && file_exists($archivoAdjunto)) {
                 $numeroFormateado = str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT);
-                $ext = pathinfo($archivoAdjunto, PATHINFO_EXTENSION);
+                $ext = strtolower(pathinfo($archivoAdjunto, PATHINFO_EXTENSION));
                 $attachName = 'Cotizacion_' . $numeroFormateado . '.' . ($ext ?: 'pdf');
-                $mail->addAttachment($archivoAdjunto, $attachName);
+                if ($ext === 'pdf') {
+                    // Forzar MIME application/pdf
+                    $mail->addAttachment($archivoAdjunto, $attachName, 'base64', 'application/pdf');
+                } else {
+                    $mail->addAttachment($archivoAdjunto, $attachName);
+                }
             }
             
             // Enviar email
