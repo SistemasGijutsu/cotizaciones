@@ -363,7 +363,8 @@ class PDFGenerator {
                             $item_num = 1;
                             foreach ($detalles as $detalle): 
                                 // Los campos vienen de la consulta JOIN: cd.*, a.nombre, a.descripcion
-                                $precio_unitario = floatval($detalle['precio'] ?? 0);
+                                // En la tabla cotizacion_detalle el precio se guarda como precio_venta
+                                $precio_unitario = floatval($detalle['precio_venta'] ?? $detalle['precio'] ?? 0);
                                 $cantidad = floatval($detalle['cantidad'] ?? 0);
                                 $total_item = $cantidad * $precio_unitario;
                                 $subtotal += $total_item;
