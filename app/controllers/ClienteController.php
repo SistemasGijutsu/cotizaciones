@@ -170,18 +170,25 @@ class ClienteController extends Controller {
      * Crear cliente rápido via AJAX
      */
     public function createRapido() {
-        if (!$this->isAjax() || !$this->isPost()) {
-            $this->redirect('index.php');
+        // Permitir POST normal o AJAX
+        if (!$this->isPost()) {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => 'Método no permitido. Use POST.'
+            ]);
+            return;
         }
         
+        // Obtener datos del POST de forma segura
+        $postData = $this->getPostData(['nombre', 'documento', 'tipo_documento', 'correo', 'telefono', 'direccion']);
+        
         $data = [
-            'nombre' => $this->getPostData('nombre'),
-            'documento' => $this->getPostData('documento'),
-            'tipo_documento' => $this->getPostData('tipo_documento', 'cedula'),
-            'empresa' => $this->getPostData('empresa'),
-            'correo' => $this->getPostData('correo'),
-            'telefono' => $this->getPostData('telefono', ''),
-            'direccion' => $this->getPostData('direccion', '')
+            'nombre' => $postData['nombre'] ?? '',
+            'documento' => $postData['documento'] ?? '',
+            'tipo_documento' => $postData['tipo_documento'] ?? 'CC',
+            'correo' => $postData['correo'] ?? '',
+            'telefono' => $postData['telefono'] ?? '',
+            'direccion' => $postData['direccion'] ?? ''
         ];
         
         try {
@@ -198,6 +205,25 @@ class ClienteController extends Controller {
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Obtener cliente por documento via AJAX
+     */
+    public function getByDocumentoAjax() {
+        // Permitimos llamadas AJAX o directas por GET para facilitar pruebas desde el navegador
+        $documento = $this->getGetData('documento');
+        if (empty($documento)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Documento no especificado']);
+            return;
+        }
+
+        $cliente = $this->clienteModel->getByDocumento($documento);
+        if ($cliente) {
+            $this->jsonResponse(['success' => true, 'cliente' => $cliente]);
+        } else {
+            $this->jsonResponse(['success' => false, 'message' => 'Cliente no encontrado']);
         }
     }
 }
