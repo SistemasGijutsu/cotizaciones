@@ -461,7 +461,8 @@ const CotizacionesApp = {
         };
         img.onerror = function() {
             document.body.classList.add('disconnected');
-            Utils.showToast('Problemas de conectividad detectados', 'warning');
+            // Notificación deshabilitada: evitar mostrar repetidamente al usuario
+            // Utils.showToast('Problemas de conectividad detectados', 'warning');
         };
         img.src = SistemaCotizaciones.baseUrl + '/public/images/pixel.gif?' + Date.now();
     }
