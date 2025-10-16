@@ -199,6 +199,160 @@ class CotizacionController extends Controller {
     }
     
     /**
+     * Mostrar formulario para editar cotización
+     */
+    public function edit() {
+        $id = $this->getGetData('id');
+        
+        if ($this->isPost()) {
+            $this->update();
+            return;
+        }
+        
+        try {
+            $cotizacion = $this->cotizacionModel->getCotizacionCompleta($id);
+            
+            if (!$cotizacion) {
+                $this->setAlert('Cotización no encontrada', 'error');
+                $this->redirect('index.php?controller=cotizacion&action=index');
+                return;
+            }
+            
+            $clientes = $this->clienteModel->getAll();
+            $articulos = $this->articuloModel->getAll();
+            $paquetes = $this->paqueteModel->getAll();
+            
+            $this->loadView('cotizaciones/edit', [
+                'cotizacion' => $cotizacion,
+                'clientes' => $clientes,
+                'articulos' => $articulos,
+                'paquetes' => $paquetes,
+                'clienteModel' => $this->clienteModel,
+                'articuloModel' => $this->articuloModel,
+                'paqueteModel' => $this->paqueteModel
+            ]);
+        } catch (Exception $e) {
+            $this->setAlert('Error al cargar los datos: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=index');
+        }
+    }
+    
+    /**
+     * Actualizar cotización existente
+     */
+    public function update() {
+        $id = $this->getPostData(['id'])['id'];
+        $clienteId = $this->getPostData(['cliente_id'])['cliente_id'];
+        $motivo = $this->getPostData(['motivo_modificacion'])['motivo_modificacion'] ?? null;
+        
+        // Obtener items de la cotización
+        $items = [];
+        if (isset($_POST['items']) && is_array($_POST['items'])) {
+            foreach ($_POST['items'] as $item) {
+                if (isset($item['id']) && isset($item['tipo']) && isset($item['cantidad']) && $item['cantidad'] > 0) {
+                    if ($item['tipo'] === 'articulo') {
+                        $items[] = [
+                            'id_articulo' => $item['id'],
+                            'cantidad' => intval($item['cantidad']),
+                            'precio' => floatval($item['precio'] ?? 0),
+                            'utilidad' => floatval($item['utilidad'] ?? 0)
+                        ];
+                    }
+                }
+            }
+        }
+        
+        // Validar
+        if (empty($clienteId)) {
+            $this->setAlert('Debe seleccionar un cliente', 'error');
+            $this->redirect('index.php?controller=cotizacion&action=edit&id=' . $id);
+            return;
+        }
+        
+        if (empty($items)) {
+            $this->setAlert('Debe agregar al menos un artículo a la cotización', 'error');
+            $this->redirect('index.php?controller=cotizacion&action=edit&id=' . $id);
+            return;
+        }
+        
+        try {
+            // Obtener usuario actual de la sesión
+            $usuarioId = $_SESSION['user_id'] ?? null;
+            
+            $this->cotizacionModel->updateCotizacion($id, $clienteId, $items, $usuarioId, $motivo);
+            $this->setAlert('Cotización actualizada exitosamente', 'success');
+            $this->redirect('index.php?controller=cotizacion&action=show&id=' . $id);
+        } catch (Exception $e) {
+            $this->setAlert('Error al actualizar la cotización: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=edit&id=' . $id);
+        }
+    }
+    
+    /**
+     * Ver historial de versiones de una cotización
+     */
+    public function historial() {
+        $id = $this->getGetData('id');
+        
+        try {
+            $cotizacion = $this->cotizacionModel->getById($id);
+            
+            if (!$cotizacion) {
+                $this->setAlert('Cotización no encontrada', 'error');
+                $this->redirect('index.php?controller=cotizacion&action=index');
+                return;
+            }
+            
+            $historial = $this->cotizacionModel->getHistorial($id);
+            
+            $this->loadView('cotizaciones/historial', [
+                'cotizacion' => $cotizacion,
+                'historial' => $historial
+            ]);
+        } catch (Exception $e) {
+            $this->setAlert('Error al cargar el historial: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=show&id=' . $id);
+        }
+    }
+    
+    /**
+     * Ver detalles de una versión específica del historial
+     */
+    public function verVersion() {
+        $id = $this->getGetData('id');
+        $version = $this->getGetData('version');
+        
+        try {
+            $cotizacion = $this->cotizacionModel->getById($id);
+            $versionHistorial = $this->cotizacionModel->getVersionHistorial($id, $version);
+            
+            if (!$versionHistorial) {
+                $this->setAlert('Versión no encontrada', 'error');
+                $this->redirect('index.php?controller=cotizacion&action=historial&id=' . $id);
+                return;
+            }
+            
+            // Obtener cliente de la versión
+            $cliente = $this->clienteModel->getById($versionHistorial['id_cliente']);
+            $versionHistorial['cliente'] = $cliente;
+            
+            // Calcular utilidad porcentual
+            $versionHistorial['utilidad_porcentaje'] = Helper::calculateProfitPercentage(
+                $versionHistorial['total_costo'], 
+                $versionHistorial['total_venta']
+            );
+            
+            $this->loadView('cotizaciones/ver_version', [
+                'cotizacion' => $cotizacion,
+                'version' => $versionHistorial
+            ]);
+        } catch (Exception $e) {
+            $this->setAlert('Error al cargar la versión: ' . $e->getMessage(), 'error');
+            $this->redirect('index.php?controller=cotizacion&action=historial&id=' . $id);
+        }
+    }
+    
+    /**
      * Dashboard con estadísticas
      */
     public function dashboard() {

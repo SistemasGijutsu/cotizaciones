@@ -19,10 +19,26 @@ $detalles = $cotizacion['detalles'] ?? [];
                     <h2 class="h4 mb-1">
                         <i class="fas fa-file-invoice-dollar text-primary me-2"></i>
                         Cotización #<?= str_pad($cotizacion['id'], 6, '0', STR_PAD_LEFT) ?>
+                        <?php if (isset($cotizacion['version']) && $cotizacion['version'] > 1): ?>
+                            <span class="badge bg-info">v<?= $cotizacion['version'] ?></span>
+                        <?php endif; ?>
                     </h2>
-                    <p class="text-muted mb-0">Detalles completos de la cotización</p>
+                    <p class="text-muted mb-0">
+                        Detalles completos de la cotización
+                        <?php if ($cotizacion['fecha_modificacion']): ?>
+                            | <small>Última edición: <?= date('d/m/Y H:i', strtotime($cotizacion['fecha_modificacion'])) ?></small>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <div class="d-flex gap-2">
+                    <a href="/mod_cotizacion/index.php?controller=cotizacion&action=edit&id=<?= $cotizacion['id'] ?>" 
+                       class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>Editar
+                    </a>
+                    <a href="/mod_cotizacion/index.php?controller=cotizacion&action=historial&id=<?= $cotizacion['id'] ?>" 
+                       class="btn btn-info">
+                        <i class="fas fa-history me-1"></i>Historial
+                    </a>
                     <a href="/mod_cotizacion/index.php?controller=cotizacion&action=generarPDF&id=<?= $cotizacion['id'] ?>" 
                        class="btn btn-outline-danger">
                         <i class="fas fa-file-pdf me-1"></i>PDF
@@ -160,13 +176,23 @@ $detalles = $cotizacion['detalles'] ?? [];
                     <hr>
                     
                     <div class="d-grid gap-2">
+                        <a href="/mod_cotizacion/index.php?controller=cotizacion&action=edit&id=<?= $cotizacion['id'] ?>" 
+                           class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar Cotización
+                        </a>
+                        <a href="/mod_cotizacion/index.php?controller=cotizacion&action=historial&id=<?= $cotizacion['id'] ?>" 
+                           class="btn btn-info">
+                            <i class="fas fa-history me-1"></i>
+                            Ver Historial
+                        </a>
                         <a href="/mod_cotizacion/index.php?controller=cotizacion&action=generarPDF&id=<?= $cotizacion['id'] ?>" 
                            class="btn btn-danger">
                             <i class="fas fa-file-pdf me-1"></i>
                             Descargar PDF
                         </a>
                         <a href="/mod_cotizacion/index.php?controller=cotizacion&action=enviarEmail&id=<?= $cotizacion['id'] ?>" 
-                           class="btn btn-info">
+                           class="btn btn-secondary">
                             <i class="fas fa-envelope me-1"></i>
                             Enviar por Email
                         </a>
@@ -181,8 +207,20 @@ $detalles = $cotizacion['detalles'] ?? [];
                 </div>
                 <div class="card-body">
                     <div class="mb-2">
-                        <strong>Fecha:</strong> <?= date('d/m/Y', strtotime($cotizacion['created_at'])) ?>
+                        <strong>Fecha Creación:</strong> <?= date('d/m/Y H:i', strtotime($cotizacion['fecha'])) ?>
                     </div>
+                    <?php if (isset($cotizacion['version'])): ?>
+                        <div class="mb-2">
+                            <strong>Versión:</strong> 
+                            <span class="badge bg-info">v<?= $cotizacion['version'] ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($cotizacion['fecha_modificacion']): ?>
+                        <div class="mb-2">
+                            <strong>Última Modificación:</strong><br>
+                            <small><?= date('d/m/Y H:i', strtotime($cotizacion['fecha_modificacion'])) ?></small>
+                        </div>
+                    <?php endif; ?>
                     <div class="mb-2">
                         <strong>Estado:</strong>
                         <?php

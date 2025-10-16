@@ -228,5 +228,175 @@ class Cotizacion extends Model {
         
         return $errors;
     }
+    
+    /**
+     * Guardar versión actual en el historial antes de editar
+     */
+    private function guardarEnHistorial($cotizacionId, $usuarioId, $motivo = null) {
+        try {
+            // Obtener cotización actual
+            $cotizacion = $this->getById($cotizacionId);
+            if (!$cotizacion) {
+                throw new Exception("Cotización no encontrada");
+            }
+            
+            // Obtener detalles actuales
+            $detalles = $this->getDetallesCotizacion($cotizacionId);
+            
+            // Guardar en historial
+            $sql = "INSERT INTO cotizaciones_historial 
+                    (id_cotizacion, version, id_cliente, fecha_version, 
+                     total_costo, total_venta, utilidad, 
+                     id_usuario_modifico, fecha_modificacion, motivo_modificacion)
+                    VALUES (:id_cotizacion, :version, :id_cliente, :fecha_version,
+                            :total_costo, :total_venta, :utilidad,
+                            :id_usuario_modifico, NOW(), :motivo)";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id_cotizacion' => $cotizacionId,
+                ':version' => $cotizacion['version'] ?? 1,
+                ':id_cliente' => $cotizacion['id_cliente'],
+                ':fecha_version' => $cotizacion['fecha'],
+                ':total_costo' => $cotizacion['total_costo'],
+                ':total_venta' => $cotizacion['total_venta'],
+                ':utilidad' => $cotizacion['utilidad'],
+                ':id_usuario_modifico' => $usuarioId,
+                ':motivo' => $motivo
+            ]);
+            
+            $historialId = $this->db->lastInsertId();
+            
+            // Guardar detalles en historial
+            foreach ($detalles as $detalle) {
+                $sqlDetalle = "INSERT INTO cotizaciones_historial_detalle 
+                               (id_historial, id_articulo, cantidad, precio_costo, precio_venta)
+                               VALUES (:id_historial, :id_articulo, :cantidad, :precio_costo, :precio_venta)";
+                
+                $stmtDetalle = $this->db->prepare($sqlDetalle);
+                $stmtDetalle->execute([
+                    ':id_historial' => $historialId,
+                    ':id_articulo' => $detalle['id_articulo'],
+                    ':cantidad' => $detalle['cantidad'],
+                    ':precio_costo' => $detalle['precio_costo'],
+                    ':precio_venta' => $detalle['precio_venta']
+                ]);
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+    
+    /**
+     * Actualizar cotización existente
+     */
+    public function updateCotizacion($cotizacionId, $clienteId, $items, $usuarioId, $motivo = null) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Guardar versión actual en historial
+            $this->guardarEnHistorial($cotizacionId, $usuarioId, $motivo);
+            
+            // Calcular nuevos totales
+            $totales = $this->calculateTotales($items);
+            
+            // Obtener versión actual
+            $cotizacion = $this->getById($cotizacionId);
+            $nuevaVersion = ($cotizacion['version'] ?? 1) + 1;
+            
+            // Actualizar cotización
+            $sql = "UPDATE {$this->table} 
+                    SET id_cliente = :id_cliente,
+                        total_costo = :total_costo,
+                        total_venta = :total_venta,
+                        utilidad = :utilidad,
+                        version = :version,
+                        id_usuario_modifico = :id_usuario_modifico,
+                        fecha_modificacion = NOW()
+                    WHERE id = :id";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id' => $cotizacionId,
+                ':id_cliente' => $clienteId,
+                ':total_costo' => $totales['total_costo'],
+                ':total_venta' => $totales['total_venta'],
+                ':utilidad' => $totales['utilidad'],
+                ':version' => $nuevaVersion,
+                ':id_usuario_modifico' => $usuarioId
+            ]);
+            
+            // Eliminar detalles antiguos
+            $sqlDelete = "DELETE FROM cotizacion_detalle WHERE id_cotizacion = :id_cotizacion";
+            $stmtDelete = $this->db->prepare($sqlDelete);
+            $stmtDelete->execute([':id_cotizacion' => $cotizacionId]);
+            
+            // Agregar nuevos detalles
+            foreach ($items as $item) {
+                $this->addDetalleCotizacion($cotizacionId, $item);
+            }
+            
+            $this->db->commit();
+            return true;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Obtener historial de versiones de una cotización
+     */
+    public function getHistorial($cotizacionId) {
+        $sql = "SELECT h.*, u.username as usuario_modifico,
+                       DATE_FORMAT(h.fecha_modificacion, '%d/%m/%Y %H:%i') as fecha_modificacion_formato,
+                       DATE_FORMAT(h.fecha_version, '%d/%m/%Y %H:%i') as fecha_version_formato
+                FROM cotizaciones_historial h
+                LEFT JOIN users u ON h.id_usuario_modifico = u.id
+                WHERE h.id_cotizacion = :id_cotizacion
+                ORDER BY h.version DESC";
+        
+        $stmt = $this->query($sql, [':id_cotizacion' => $cotizacionId]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Obtener detalles de una versión histórica
+     */
+    public function getDetallesHistorial($historialId) {
+        $sql = "SELECT hd.*, a.nombre, a.descripcion
+                FROM cotizaciones_historial_detalle hd
+                INNER JOIN articulos a ON hd.id_articulo = a.id
+                WHERE hd.id_historial = :historial_id";
+        
+        $stmt = $this->query($sql, [':historial_id' => $historialId]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Obtener versión específica del historial
+     */
+    public function getVersionHistorial($cotizacionId, $version) {
+        $sql = "SELECT h.*, u.username as usuario_modifico
+                FROM cotizaciones_historial h
+                LEFT JOIN users u ON h.id_usuario_modifico = u.id
+                WHERE h.id_cotizacion = :id_cotizacion AND h.version = :version";
+        
+        $stmt = $this->query($sql, [
+            ':id_cotizacion' => $cotizacionId,
+            ':version' => $version
+        ]);
+        
+        $historial = $stmt->fetch();
+        
+        if ($historial) {
+            $historial['detalles'] = $this->getDetallesHistorial($historial['id']);
+        }
+        
+        return $historial;
+    }
 }
 ?>
