@@ -90,7 +90,7 @@
                             </a></li>
                             <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#">
+                                <li><a class="dropdown-item" href="index.php?controller=user&action=index">
                                     <i class="fas fa-users-cog me-2"></i>Gestión de Usuarios
                                 </a></li>
                             <?php endif; ?>
@@ -160,11 +160,21 @@
                         <hr class="text-white">
                         
                         <li class="nav-item">
-                            <a class="nav-link" href="index.php?controller=articulo&action=estadisticas">
-                                <i class="fas fa-chart-bar me-2"></i>
-                                Estadísticas
+                            <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'reporte') ? 'active' : ''; ?>" 
+                               href="index.php?controller=reporte&action=index">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Reportes e Informes
                             </a>
                         </li>
+                        <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'user') ? 'active' : ''; ?>" 
+                               href="index.php?controller=user&action=index">
+                                <i class="fas fa-users-cog me-2"></i>
+                                Gestión de Usuarios
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </nav>

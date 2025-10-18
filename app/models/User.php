@@ -124,6 +124,32 @@ class User extends Model {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    /**
+     * Contar usuarios totales
+     */
+    public function countUsers() {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return (int) $stmt->fetch()['total'];
+    }
+
+    /**
+     * Obtener usuarios paginados
+     */
+    public function getUsersPaginated($limit, $offset) {
+        $sql = "SELECT id, username, email, nombre_completo, created_at, updated_at 
+                FROM {$this->table} 
+                ORDER BY username ASC 
+                LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
     
     /**
      * Validar datos de usuario
