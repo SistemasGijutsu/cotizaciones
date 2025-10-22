@@ -66,6 +66,12 @@ class PDFGenerator {
      */
     private function generarHTMLCotizacion($cotizacion, $cliente, $detalles) {
         $subtotal = 0;
+        // Buscar membrete en public/images/membrete.png y preparar data URI si existe
+        $membreteFile = __DIR__ . '/../../public/images/membrete.png';
+        $membreteData = null;
+        if (file_exists($membreteFile)) {
+            $membreteData = 'data:image/png;base64,' . base64_encode(file_get_contents($membreteFile));
+        }
         
         ob_start();
         ?>
@@ -93,7 +99,31 @@ class PDFGenerator {
                 .container {
                     max-width: 800px;
                     margin: 0 auto;
-                    padding: 20px;
+                    padding: 0;
+                    background: transparent;
+                    position: relative;
+                    min-height: 297mm; /* altura A4 */
+                }
+
+                /* Estilos para el membrete de página completa */
+                .membrete-img {
+                    position: fixed; /* fijo para que se vea en todas las páginas al imprimir */
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 100%;
+                    max-width: 800px;
+                    height: auto;
+                    z-index: 0;
+                    pointer-events: none;
+                    opacity: 1; /* visible completamente */
+                }
+                
+                /* Contenedor interno con padding para respetar el diseño del membrete */
+                .content-wrapper {
+                    position: relative;
+                    z-index: 1;
+                    padding: 140px 30px 100px 30px; /* top, right, bottom, left - ajustar según tu membrete */
                 }
                 
                 .header {
@@ -121,14 +151,14 @@ class PDFGenerator {
 
                 .cotizacion-info {
                     position: absolute;
-                    right: 0;
-                    top: 0; /* alineado con la parte superior del header */
-                    width: 300px; /* ancho fijo para mantener consistencia en PDF */
+                    right: 30px;
+                    top: 20px; /* posición desde el inicio del content-wrapper */
+                    width: 260px;
                     text-align: right;
-                    background: #f8f9fa;
-                    padding: 12px 14px;
+                    background: rgba(255,255,255,0.95); /* fondo blanco semi-transparente */
+                    padding: 10px 12px;
                     border-radius: 8px;
-                    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
 
                 /* Reducir tamaño del título y mejorar jerarquía visual */
@@ -301,8 +331,15 @@ class PDFGenerator {
         </head>
         <body>
             <div class="container">
+                <?php if ($membreteData): ?>
+                    <img class="membrete-img" src="<?php echo $membreteData; ?>" alt="Membrete">
+                <?php endif; ?>
+                
+                <!-- Contenedor interno para el contenido -->
+                <div class="content-wrapper">
                 <!-- Header -->
                 <div class="header">
+                    <?php if (!$membreteData): ?>
                     <div class="empresa-info">
                         <h1><?php echo $this->empresa['nombre']; ?></h1>
                         <p><strong>NIT:</strong> <?php echo $this->empresa['nit']; ?></p>
@@ -312,6 +349,7 @@ class PDFGenerator {
                         <p><strong>Email:</strong> <?php echo $this->empresa['email']; ?></p>
                         <p><strong>Web:</strong> <?php echo $this->empresa['web']; ?></p>
                     </div>
+                    <?php endif; ?>
                     
                     <div class="cotizacion-info">
                         <h2>COTIZACIÓN</h2>
@@ -471,7 +509,8 @@ class PDFGenerator {
                         </div>
                     </div>
                 </div>
-            </div>
+                </div> <!-- Cierre de content-wrapper -->
+            </div> <!-- Cierre de container -->
             
             <script>
                 // Auto-imprimir si se accede directamente
