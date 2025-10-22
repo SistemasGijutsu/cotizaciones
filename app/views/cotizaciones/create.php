@@ -227,11 +227,13 @@ $paquetes = $paquetes ?? [];
                     <label class="form-label">Seleccionar Paquete</label>
                     <select class="form-select" id="select_paquete">
                         <option value="">-- Seleccione un paquete --</option>
-                        <?php foreach ($paquetes as $paquete): ?>
+                        <?php foreach ($paquetes as $paquete): 
+                            $precio_safe = isset($paquete['precio_venta']) && floatval($paquete['precio_venta']) > 0 ? $paquete['precio_venta'] : ($paquete['precio_total'] ?? 0);
+                        ?>
                             <option value="<?= $paquete['id'] ?>" 
                                     data-nombre="<?= htmlspecialchars($paquete['nombre']) ?>"
-                                    data-precio="<?= $paquete['precio_total'] ?>">
-                                <?= htmlspecialchars($paquete['nombre']) ?> - $<?= number_format($paquete['precio_total']) ?>
+                                    data-precio="<?= $precio_safe ?>">
+                                <?= htmlspecialchars($paquete['nombre']) ?> - $<?= number_format($precio_safe) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

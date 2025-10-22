@@ -36,11 +36,15 @@ class Paquete extends Model {
      * Crear solo el paquete
      */
     private function createPaquete($data) {
-        $sql = "INSERT INTO {$this->table} (nombre, descripcion) VALUES (:nombre, :descripcion)";
+        // precio_venta es opcional a nivel de paquete: puede definirse al agregar a la cotización
+        $sql = "INSERT INTO {$this->table} (nombre, descripcion, precio_venta, imagen) VALUES (:nombre, :descripcion, :precio_venta, :imagen)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':nombre' => $data['nombre'],
-            ':descripcion' => $data['descripcion']
+            ':descripcion' => $data['descripcion'],
+            // si no se proporciona, guardar NULL en lugar de 0 para distinguir "sin precio"
+            ':precio_venta' => array_key_exists('precio_venta', $data) ? $data['precio_venta'] : null,
+            ':imagen' => $data['imagen'] ?? null
         ]);
         return $this->db->lastInsertId();
     }
@@ -63,34 +67,38 @@ class Paquete extends Model {
      * Obtener artículos de un paquete
      */
     public function getArticulosPaquete($paqueteId) {
-        $sql = "SELECT pa.*, a.nombre, a.descripcion, a.precio_costo, a.precio_venta, a.stock
-                FROM paquete_articulos pa
-                INNER JOIN articulos a ON pa.id_articulo = a.id
-                WHERE pa.id_paquete = :paquete_id";
+    // Los artículos ya no tienen campo precio_venta (precio de venta solo aplica a paquetes o a la cotización)
+    $sql = "SELECT pa.*, a.nombre, a.descripcion, a.precio_costo, a.stock
+        FROM paquete_articulos pa
+        INNER JOIN articulos a ON pa.id_articulo = a.id
+        WHERE pa.id_paquete = :paquete_id";
         
         $stmt = $this->query($sql, [':paquete_id' => $paqueteId]);
         return $stmt->fetchAll();
     }
     
     /**
-     * Calcular precio total del paquete (costo y venta)
+     * Calcular precio total del paquete (solo costo, venta viene del paquete)
      */
     public function calcularPreciosPaquete($paqueteId) {
         $articulos = $this->getArticulosPaquete($paqueteId);
+        $paquete = $this->getById($paqueteId);
         
         $totalCosto = 0;
-        $totalVenta = 0;
         
         foreach ($articulos as $articulo) {
             $totalCosto += $articulo['precio_costo'] * $articulo['cantidad'];
-            $totalVenta += $articulo['precio_venta'] * $articulo['cantidad'];
         }
+        
+        $precioVenta = $paquete['precio_venta'] ?? 0;
+        $utilidad = $precioVenta - $totalCosto;
+        $utilidadPorcentaje = $totalCosto > 0 ? ($utilidad / $totalCosto) * 100 : 0;
         
         return [
             'total_costo' => $totalCosto,
-            'total_venta' => $totalVenta,
-            'utilidad' => $totalVenta - $totalCosto,
-            'utilidad_porcentaje' => $totalCosto > 0 ? (($totalVenta - $totalCosto) / $totalCosto) * 100 : 0
+            'precio_venta' => $precioVenta,
+            'utilidad' => $utilidad,
+            'utilidad_porcentaje' => $utilidadPorcentaje
         ];
     }
     
@@ -113,17 +121,9 @@ class Paquete extends Model {
      * Obtener todos los paquetes (override del método base)
      */
     public function getAll() {
-        $sql = "SELECT *, 0 as precio FROM {$this->table} ORDER BY nombre";
+        $sql = "SELECT * FROM {$this->table} ORDER BY nombre";
         $stmt = $this->query($sql);
-        $paquetes = $stmt->fetchAll();
-        
-        // Calcular precios para cada paquete
-        foreach ($paquetes as &$paquete) {
-            $precios = $this->calcularPreciosPaquete($paquete['id']);
-            $paquete['precio'] = $precios['total_venta'];
-        }
-        
-        return $paquetes;
+        return $stmt->fetchAll();
     }
     
     /**
@@ -160,6 +160,11 @@ class Paquete extends Model {
         
         if (empty($data['nombre'])) {
             $errors[] = "El nombre del paquete es obligatorio";
+        }
+        
+        // precio_venta ahora es opcional - se define al agregar a cotización
+        if (isset($data['precio_venta']) && $data['precio_venta'] < 0) {
+            $errors[] = "El precio de venta no puede ser negativo";
         }
         
         if (empty($articulos)) {

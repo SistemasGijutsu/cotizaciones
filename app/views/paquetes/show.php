@@ -64,9 +64,20 @@ $precios = $precios ?? ['total_costo' => 0, 'total_venta' => 0, 'utilidad' => 0,
                                         <td>
                                             <span class="badge bg-secondary"><?= $item['cantidad'] ?></span>
                                         </td>
-                                        <td>$<?= number_format($item['precio_venta'], 2) ?></td>
+                                        <?php
+                                            // Mostrar precio de venta si existe; si no, mostrar precio_costo como referencia
+                                            $unitPrice = (isset($item['precio_venta']) && floatval($item['precio_venta']) > 0)
+                                                ? floatval($item['precio_venta'])
+                                                : floatval($item['precio_costo']);
+                                            $subtotal = $unitPrice * $item['cantidad'];
+                                        ?>
+                                        <td>$<?= number_format($unitPrice, 2) ?>
+                                            <?php if (!isset($item['precio_venta']) || floatval($item['precio_venta']) <= 0): ?>
+                                                <br><small class="text-muted">(sin precio de venta, se muestra costo)</small>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
-                                            <strong class="text-success">$<?= number_format($item['precio_venta'] * $item['cantidad'], 2) ?></strong>
+                                            <strong class="text-success">$<?= number_format($subtotal, 2) ?></strong>
                                         </td>
                                         <td>
                                             <span class="badge bg-<?= $item['stock'] >= $item['cantidad'] ? 'success' : 'danger' ?>">
@@ -89,25 +100,32 @@ $precios = $precios ?? ['total_costo' => 0, 'total_venta' => 0, 'utilidad' => 0,
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
-                        <div class="h2 text-success">${{ number_format($precios['total_venta'], 2) }}</div>
-                        <small class="text-muted">Precio Total del Paquete</small>
+                        <?php $totalVenta = floatval($precios['total_venta'] ?? 0); ?>
+                        <div class="h2 text-success">
+                            <?php if ($totalVenta > 0): ?>
+                                $<?= number_format($totalVenta, 2) ?>
+                            <?php else: ?>
+                                <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </div>
+                        <small class="text-muted"><?php echo $totalVenta > 0 ? 'Precio Total del Paquete' : 'Precio no definido (se establecerá al crear la cotización)'; ?></small>
                     </div>
                     
                     <hr>
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Costo Total:</span>
-                        <strong>${{ number_format($precios['total_costo'], 2) }}</strong>
+                        <strong>$<?= number_format($precios['total_costo'] ?? 0, 2) ?></strong>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mb-2">
                         <span>Utilidad:</span>
-                        <strong class="text-success">${{ number_format($precios['utilidad'], 2) }}</strong>
+                        <strong class="text-success">$<?= number_format($precios['utilidad'] ?? 0, 2) ?></strong>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mb-3">
                         <span>Margen:</span>
-                        <strong class="text-info">{{ number_format($precios['utilidad_porcentaje'], 1) }}%</strong>
+                        <strong class="text-info"><?= number_format($precios['utilidad_porcentaje'] ?? 0, 1) ?>%</strong>
                     </div>
                     
                     <div class="d-grid gap-2">

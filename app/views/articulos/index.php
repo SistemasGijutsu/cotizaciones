@@ -81,17 +81,12 @@ include_once 'app/views/layouts/header.php';
                             <th>Descripción</th>
                             <th>Stock</th>
                             <th>Precio Costo</th>
-                            <th>Precio Venta</th>
-                            <th>Utilidad</th>
                             <th width="150">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($articulos as $articulo): ?>
                             <?php 
-                            $utilidad = $articulo['precio_venta'] - $articulo['precio_costo'];
-                            $utilidadPorcentaje = $articulo['precio_costo'] > 0 ? 
-                                                ($utilidad / $articulo['precio_costo']) * 100 : 0;
                             $stockBajo = $articulo['stock'] <= 5;
                             ?>
                             <tr>
@@ -119,25 +114,9 @@ include_once 'app/views/layouts/header.php';
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="text-danger">
+                                    <strong class="text-primary">
                                         <?php echo '$' . number_format($articulo['precio_costo'], 0); ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <strong class="text-success">
-                                        <?php echo '$' . number_format($articulo['precio_venta'], 0); ?>
                                     </strong>
-                                </td>
-                                <td>
-                                    <div>
-                                        <span class="<?php echo $utilidad > 0 ? 'text-success' : 'text-danger'; ?>">
-                                            <?php echo '$' . number_format($utilidad, 0); ?>
-                                        </span>
-                                        <br>
-                                        <small class="<?php echo $utilidadPorcentaje > 0 ? 'text-success' : 'text-danger'; ?>">
-                                            <?php echo number_format($utilidadPorcentaje, 1); ?>%
-                                        </small>
-                                    </div>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
@@ -209,21 +188,14 @@ include_once 'app/views/layouts/header.php';
         <div class="stats-card info">
             <div class="stats-number">
                 <?php 
-                $utilidadPromedio = 0;
-                if (isset($articulos) && count($articulos) > 0) {
-                    $totalUtilidad = 0;
-                    foreach ($articulos as $art) {
-                        if ($art['precio_costo'] > 0) {
-                            $utilidad = (($art['precio_venta'] - $art['precio_costo']) / $art['precio_costo']) * 100;
-                            $totalUtilidad += $utilidad;
-                        }
-                    }
-                    $utilidadPromedio = $totalUtilidad / count($articulos);
+                $sinStock = 0;
+                if (isset($articulos)) {
+                    $sinStock = count(array_filter($articulos, function($a) { return $a['stock'] == 0; }));
                 }
-                echo number_format($utilidadPromedio, 1) . '%';
+                echo $sinStock;
                 ?>
             </div>
-            <div class="stats-label">Utilidad Promedio</div>
+            <div class="stats-label">Sin Stock</div>
         </div>
     </div>
 </div>

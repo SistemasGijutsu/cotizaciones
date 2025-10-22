@@ -61,10 +61,10 @@ $errors = $errors ?? [];
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="stock" class="form-label">Stock Disponible *</label>
-                                    <input type="number" class="form-control" id="stock" name="stock" 
-                                           value="<?= htmlspecialchars($articulo['stock'] ?? '') ?>" 
-                                           min="0" required>
+                                    <label for="codigo" class="form-label">Código</label>
+                                    <input type="text" class="form-control" id="codigo" name="codigo" 
+                                           value="<?= htmlspecialchars($articulo['codigo'] ?? 'ART-' . $articulo['id']) ?>" readonly>
+                                    <small class="text-muted">Código de identificación único</small>
                                 </div>
                             </div>
                         </div>
@@ -83,37 +83,18 @@ $errors = $errors ?? [];
                                         <span class="input-group-text">$</span>
                                         <input type="number" class="form-control" id="precio_costo" name="precio_costo" 
                                                value="<?= htmlspecialchars($articulo['precio_costo'] ?? '') ?>" 
-                                               step="0.01" min="0" required onchange="calcularUtilidad()">
+                                               step="0.01" min="0" required>
                                     </div>
+                                    <small class="text-muted">Costo de compra o adquisición</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="precio_venta" class="form-label">Precio de Venta *</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="precio_venta" name="precio_venta" 
-                                               value="<?= htmlspecialchars($articulo['precio_venta'] ?? '') ?>" 
-                                               step="0.01" min="0" required onchange="calcularUtilidad()">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Indicador de utilidad -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="alert alert-info" id="utilidad-info">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span>
-                                            <i class="fas fa-calculator me-2"></i>
-                                            <strong>Utilidad:</strong>
-                                        </span>
-                                        <div>
-                                            <span id="utilidad-pesos" class="me-3">$0.00</span>
-                                            <span id="utilidad-porcentaje" class="badge bg-info">0%</span>
-                                        </div>
-                                    </div>
+                                    <label for="stock" class="form-label">Stock Disponible *</label>
+                                    <input type="number" class="form-control" id="stock" name="stock" 
+                                           value="<?= htmlspecialchars($articulo['stock'] ?? '') ?>" 
+                                           min="0" required>
+                                    <small class="text-muted">Cantidad actual en inventario</small>
                                 </div>
                             </div>
                         </div>
@@ -184,36 +165,12 @@ $errors = $errors ?? [];
                 <div class="card-body">
                     <small class="text-muted">
                         <ul class="mb-0">
-                            <li>El precio de venta debe ser mayor al costo</li>
-                            <li>Mantenga el stock actualizado</li>
-                            <li>Una descripción clara ayuda en las cotizaciones</li>
-                            <li>Revise regularmente la utilidad del artículo</li>
+                            <li>Actualice el stock al recibir o vender mercancía</li>
+                            <li>Mantenga el precio de costo actualizado</li>
+                            <li>Una descripción clara ayuda en la identificación</li>
+                            <li>Los artículos se venden dentro de paquetes</li>
                         </ul>
                     </small>
-                </div>
-            </div>
-
-            <!-- Calculadora rápida de margen -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-header bg-success text-white">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-percentage me-2"></i>
-                        Calculadora de Margen
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <label for="margen_deseado" class="form-label">Margen Deseado (%)</label>
-                        <input type="number" class="form-control form-control-sm" id="margen_deseado" 
-                               placeholder="Ej: 25" min="0" max="100" onchange="calcularPrecioConMargen()">
-                    </div>
-                    <div class="text-center">
-                        <small class="text-muted">Precio sugerido:</small>
-                        <div class="h5 text-success" id="precio_sugerido">$0.00</div>
-                        <button type="button" class="btn btn-sm btn-success" onclick="aplicarPrecioSugerido()">
-                            Aplicar Precio
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -221,62 +178,14 @@ $errors = $errors ?? [];
 </div>
 
 <script>
-function calcularUtilidad() {
-    const costo = parseFloat(document.getElementById('precio_costo').value) || 0;
-    const venta = parseFloat(document.getElementById('precio_venta').value) || 0;
-    
-    const utilidadPesos = venta - costo;
-    const utilidadPorcentaje = costo > 0 ? ((utilidadPesos / costo) * 100) : 0;
-    
-    document.getElementById('utilidad-pesos').textContent = '$' + utilidadPesos.toFixed(2);
-    document.getElementById('utilidad-porcentaje').textContent = utilidadPorcentaje.toFixed(1) + '%';
-    
-    // Cambiar color según el margen
-    const badge = document.getElementById('utilidad-porcentaje');
-    badge.className = 'badge ';
-    if (utilidadPorcentaje < 10) {
-        badge.className += 'bg-danger';
-    } else if (utilidadPorcentaje < 25) {
-        badge.className += 'bg-warning text-dark';
-    } else {
-        badge.className += 'bg-success';
-    }
-}
-
-function calcularPrecioConMargen() {
-    const costo = parseFloat(document.getElementById('precio_costo').value) || 0;
-    const margen = parseFloat(document.getElementById('margen_deseado').value) || 0;
-    
-    if (costo > 0 && margen > 0) {
-        const precioSugerido = costo * (1 + (margen / 100));
-        document.getElementById('precio_sugerido').textContent = '$' + precioSugerido.toFixed(2);
-    } else {
-        document.getElementById('precio_sugerido').textContent = '$0.00';
-    }
-}
-
-function aplicarPrecioSugerido() {
-    const precioSugerido = document.getElementById('precio_sugerido').textContent.replace('$', '');
-    if (precioSugerido !== '0.00') {
-        document.getElementById('precio_venta').value = precioSugerido;
-        calcularUtilidad();
-    }
-}
-
-// Calcular utilidad inicial
-document.addEventListener('DOMContentLoaded', function() {
-    calcularUtilidad();
-});
-
 // Validación del formulario
 document.getElementById('articuloForm').addEventListener('submit', function(e) {
     const costo = parseFloat(document.getElementById('precio_costo').value) || 0;
-    const venta = parseFloat(document.getElementById('precio_venta').value) || 0;
     
-    if (venta < costo) {
+    if (costo <= 0) {
         e.preventDefault();
-        alert('El precio de venta no puede ser menor al precio de costo');
-        document.getElementById('precio_venta').focus();
+        alert('El precio de costo debe ser mayor a 0');
+        document.getElementById('precio_costo').focus();
         return false;
     }
 });

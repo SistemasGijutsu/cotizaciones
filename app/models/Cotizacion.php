@@ -79,12 +79,23 @@ class Cotizacion extends Model {
                 VALUES (:id_cotizacion, :id_articulo, :cantidad, :precio_costo, :precio_venta)";
         
         $stmt = $this->db->prepare($sql);
+        // Determinar precio de venta a guardar: prioridad al precio enviado en el item
+        $precioVenta = isset($item['precio']) && $item['precio'] !== '' ? floatval($item['precio']) : null;
+        if ($precioVenta === null) {
+            // Fallback al campo del artículo si existiera, sino al costo
+            if (isset($articulo['precio_venta']) && $articulo['precio_venta'] !== null) {
+                $precioVenta = floatval($articulo['precio_venta']);
+            } else {
+                $precioVenta = floatval($articulo['precio_costo']);
+            }
+        }
+
         return $stmt->execute([
             ':id_cotizacion' => $cotizacionId,
             ':id_articulo' => $item['id_articulo'],
             ':cantidad' => $item['cantidad'],
             ':precio_costo' => $articulo['precio_costo'],
-            ':precio_venta' => $articulo['precio_venta']
+            ':precio_venta' => $precioVenta
         ]);
     }
     
@@ -97,8 +108,20 @@ class Cotizacion extends Model {
         
         foreach ($items as $item) {
             $articulo = $this->articuloModel->getById($item['id_articulo']);
-            $totalCosto += $articulo['precio_costo'] * $item['cantidad'];
-            $totalVenta += $articulo['precio_venta'] * $item['cantidad'];
+            $precioCosto = floatval($articulo['precio_costo']);
+            $precioUnitarioVenta = null;
+
+            // Priorizar precio enviado en el item
+            if (isset($item['precio']) && $item['precio'] !== '') {
+                $precioUnitarioVenta = floatval($item['precio']);
+            } elseif (isset($articulo['precio_venta']) && $articulo['precio_venta'] !== null) {
+                $precioUnitarioVenta = floatval($articulo['precio_venta']);
+            } else {
+                $precioUnitarioVenta = $precioCosto;
+            }
+
+            $totalCosto += $precioCosto * $item['cantidad'];
+            $totalVenta += $precioUnitarioVenta * $item['cantidad'];
         }
         
         return [

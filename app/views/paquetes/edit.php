@@ -31,7 +31,7 @@ $errors = $errors ?? [];
         </div>
     </div>
 
-    <form action="/mod_cotizacion/index.php?controller=paquete&action=edit&id=<?= $paquete['id'] ?>" method="POST">
+    <form action="/mod_cotizacion/index.php?controller=paquete&action=edit&id=<?= $paquete['id'] ?>" method="POST" enctype="multipart/form-data">
         <div class="row">
             <div class="col-lg-4">
                 <div class="card shadow-sm">
@@ -47,6 +47,35 @@ $errors = $errors ?? [];
                         <div class="mb-3">
                             <label for="descripcion" class="form-label">Descripción</label>
                             <textarea class="form-control" id="descripcion" name="descripcion" rows="4"><?= htmlspecialchars($paquete['descripcion'] ?? '') ?></textarea>
+                            <small class="text-muted">Opcional: describe los beneficios o características del paquete</small>
+                        </div>
+                        
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> El precio de venta se define al agregar este paquete a una cotización.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">
+                                <i class="fas fa-image me-1"></i>
+                                Imagen del Paquete
+                            </label>
+                            <?php if (!empty($paquete['imagen'])): ?>
+                                <div class="mb-2">
+                                    <img src="/mod_cotizacion/public/images/paquetes/<?= htmlspecialchars($paquete['imagen']) ?>" 
+                                         alt="Imagen actual" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                    <p class="text-muted small mt-1">Imagen actual</p>
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" onchange="previewImagen(this)">
+                            <small class="text-muted">Formatos: JPG, PNG, GIF, WEBP (Máx. 5MB)</small>
+                            <div id="preview-container" class="mt-3" style="display: none;">
+                                <p class="text-success small"><strong>Nueva imagen:</strong></p>
+                                <img id="preview-imagen" src="" alt="Vista previa" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                <button type="button" class="btn btn-sm btn-danger ms-2" onclick="eliminarPreview()">
+                                    <i class="fas fa-times"></i> Quitar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,3 +126,32 @@ $errors = $errors ?? [];
         </div>
     </form>
 </div>
+
+<script>
+// Preview de imagen
+function previewImagen(input) {
+    const previewContainer = document.getElementById("preview-container");
+    const previewImg = document.getElementById("preview-imagen");
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewContainer.style.display = "block";
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function eliminarPreview() {
+    const input = document.getElementById("imagen");
+    const previewContainer = document.getElementById("preview-container");
+    const previewImg = document.getElementById("preview-imagen");
+    
+    input.value = "";
+    previewImg.src = "";
+    previewContainer.style.display = "none";
+}
+</script>

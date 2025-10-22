@@ -54,8 +54,9 @@ class CotizacionController extends Controller {
         
         try {
             $clientes = $this->clienteModel->getAll();
-            $articulos = $this->articuloModel->getAll(); // Cambiar a getAll() para evitar problemas
-            $paquetes = $this->paqueteModel->getAll();
+            $articulos = $this->articuloModel->getAll(); // lista de artículos
+            // Obtener paquetes ya con los cálculos de precio/costo para evitar campos indefinidos en la vista
+            $paquetes = $this->paqueteModel->getPaquetesWithPrices();
             
             $this->loadView('cotizaciones/create', [
                 'clientes' => $clientes,
@@ -83,7 +84,7 @@ class CotizacionController extends Controller {
             foreach ($_POST['items'] as $item) {
                 // Verificar que tenga los campos necesarios
                 if (isset($item['id']) && isset($item['tipo']) && isset($item['cantidad']) && $item['cantidad'] > 0) {
-                    // Por ahora solo procesamos artículos
+                    // Procesar artículos y paquetes
                     if ($item['tipo'] === 'articulo') {
                         $items[] = [
                             'id_articulo' => $item['id'],
@@ -91,6 +92,40 @@ class CotizacionController extends Controller {
                             'precio' => floatval($item['precio'] ?? 0),
                             'utilidad' => floatval($item['utilidad'] ?? 0)
                         ];
+                    } elseif ($item['tipo'] === 'paquete') {
+                        // Expandir paquete a sus artículos
+                        $paqueteId = intval($item['id']);
+                        $cantidadPaquete = intval($item['cantidad']);
+                        // El precio enviado desde la UI se encuentra en items[][precio]
+                        $precioPaquete = floatval($item['precio'] ?? 0);
+
+                        $articulosPaquete = $this->paqueteModel->getArticulosPaquete($paqueteId);
+                        if (!empty($articulosPaquete)) {
+                            // Calcular costo total del paquete para distribuir el precio proporcionalmente
+                            $totalCosto = 0;
+                            foreach ($articulosPaquete as $ap) {
+                                $totalCosto += floatval($ap['precio_costo']) * intval($ap['cantidad']);
+                            }
+
+                            // Si no hay precioPaquete, usar suma de costos como precio (fallback)
+                            if ($precioPaquete <= 0) {
+                                $precioPaquete = $totalCosto;
+                            }
+
+                            // Distribuir precio entre los artículos según su aporte al costo
+                            foreach ($articulosPaquete as $ap) {
+                                $artCostoTotal = floatval($ap['precio_costo']) * intval($ap['cantidad']);
+                                $proporcion = $totalCosto > 0 ? ($artCostoTotal / $totalCosto) : (1 / count($articulosPaquete));
+                                $precioUnitarioArticulo = ($precioPaquete * $proporcion) / intval($ap['cantidad']);
+
+                                $items[] = [
+                                    'id_articulo' => $ap['id_articulo'],
+                                    'cantidad' => intval($ap['cantidad']) * $cantidadPaquete,
+                                    'precio' => floatval($precioUnitarioArticulo),
+                                    'utilidad' => 0
+                                ];
+                            }
+                        }
                     }
                     // TODO: Implementar soporte para paquetes
                 }
@@ -220,7 +255,7 @@ class CotizacionController extends Controller {
             
             $clientes = $this->clienteModel->getAll();
             $articulos = $this->articuloModel->getAll();
-            $paquetes = $this->paqueteModel->getAll();
+            $paquetes = $this->paqueteModel->getPaquetesWithPrices();
             
             $this->loadView('cotizaciones/edit', [
                 'cotizacion' => $cotizacion,
@@ -257,6 +292,36 @@ class CotizacionController extends Controller {
                             'precio' => floatval($item['precio'] ?? 0),
                             'utilidad' => floatval($item['utilidad'] ?? 0)
                         ];
+                    } elseif ($item['tipo'] === 'paquete') {
+                        // Expandir paquete a sus artículos (igual que en store)
+                        $paqueteId = intval($item['id']);
+                        $cantidadPaquete = intval($item['cantidad']);
+                        $precioPaquete = floatval($item['precio'] ?? 0);
+
+                        $articulosPaquete = $this->paqueteModel->getArticulosPaquete($paqueteId);
+                        if (!empty($articulosPaquete)) {
+                            $totalCosto = 0;
+                            foreach ($articulosPaquete as $ap) {
+                                $totalCosto += floatval($ap['precio_costo']) * intval($ap['cantidad']);
+                            }
+
+                            if ($precioPaquete <= 0) {
+                                $precioPaquete = $totalCosto;
+                            }
+
+                            foreach ($articulosPaquete as $ap) {
+                                $artCostoTotal = floatval($ap['precio_costo']) * intval($ap['cantidad']);
+                                $proporcion = $totalCosto > 0 ? ($artCostoTotal / $totalCosto) : (1 / count($articulosPaquete));
+                                $precioUnitarioArticulo = ($precioPaquete * $proporcion) / intval($ap['cantidad']);
+
+                                $items[] = [
+                                    'id_articulo' => $ap['id_articulo'],
+                                    'cantidad' => intval($ap['cantidad']) * $cantidadPaquete,
+                                    'precio' => floatval($precioUnitarioArticulo),
+                                    'utilidad' => 0
+                                ];
+                            }
+                        }
                     }
                 }
             }

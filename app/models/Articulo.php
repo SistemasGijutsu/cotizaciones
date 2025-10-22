@@ -43,14 +43,6 @@ class Articulo extends Model {
             $errors[] = "El precio de costo debe ser mayor o igual a 0";
         }
         
-        if (!isset($data['precio_venta']) || $data['precio_venta'] < 0) {
-            $errors[] = "El precio de venta debe ser mayor o igual a 0";
-        }
-        
-        if ($data['precio_venta'] < $data['precio_costo']) {
-            $errors[] = "El precio de venta no puede ser menor al precio de costo";
-        }
-        
         if (!isset($data['stock']) || $data['stock'] < 0) {
             $errors[] = "El stock debe ser mayor o igual a 0";
         }
@@ -76,15 +68,31 @@ class Articulo extends Model {
     }
     
     /**
-     * Calcular utilidad de un artículo
+     * Calcular costo total de un artículo por cantidad
+     */
+    public function calcularCostoTotal($id, $cantidad = 1) {
+        $articulo = $this->getById($id);
+        if (!$articulo) return 0;
+        
+        return $articulo['precio_costo'] * $cantidad;
+    }
+
+    /**
+     * Calcular utilidad porcentual del artículo (compatibilidad)
+     * Si no existe precio_venta o es 0, devuelve 0
      */
     public function calcularUtilidad($id) {
         $articulo = $this->getById($id);
         if (!$articulo) return 0;
-        
-        $costo = $articulo['precio_costo'];
-        $venta = $articulo['precio_venta'];
-        
+
+        // Si no existe precio_venta (nuevo flujo), devolver 0
+        if (!isset($articulo['precio_venta']) || floatval($articulo['precio_venta']) == 0) {
+            return 0;
+        }
+
+        $costo = floatval($articulo['precio_costo']);
+        $venta = floatval($articulo['precio_venta']);
+
         if ($costo == 0) return 0;
         return (($venta - $costo) / $costo) * 100;
     }

@@ -8,10 +8,6 @@ if (!isset($_SESSION['user_id'])) {
 // Variables inicializadas desde el controlador
 $articulo = $articulo ?? [];
 $historialCotizaciones = $historialCotizaciones ?? [];
-
-// Calcular utilidad
-$utilidadPesos = ($articulo['precio_venta'] ?? 0) - ($articulo['precio_costo'] ?? 0);
-$utilidadPorcentaje = ($articulo['precio_costo'] ?? 0) > 0 ? (($utilidadPesos / $articulo['precio_costo']) * 100) : 0;
 ?>
 
 <div class="container-fluid">
@@ -93,29 +89,18 @@ $utilidadPorcentaje = ($articulo['precio_costo'] ?? 0) > 0 ? (($utilidadPesos / 
 
                     <!-- Información de Precios -->
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="text-center p-3 bg-light rounded">
                                 <i class="fas fa-dollar-sign text-info fa-2x mb-2"></i>
                                 <div class="h4 text-info mb-1">$<?= number_format($articulo['precio_costo'] ?? 0, 2) ?></div>
                                 <div class="text-muted">Precio de Costo</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="text-center p-3 bg-light rounded">
-                                <i class="fas fa-tag text-success fa-2x mb-2"></i>
-                                <div class="h4 text-success mb-1">$<?= number_format($articulo['precio_venta'] ?? 0, 2) ?></div>
-                                <div class="text-muted">Precio de Venta</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center p-3 bg-light rounded">
-                                <i class="fas fa-chart-line <?= $utilidadPorcentaje > 0 ? 'text-success' : 'text-danger' ?> fa-2x mb-2"></i>
-                                <div class="h4 <?= $utilidadPorcentaje > 0 ? 'text-success' : 'text-danger' ?> mb-1">
-                                    <?= $utilidadPorcentaje > 0 ? '+' : '' ?><?= number_format($utilidadPorcentaje, 1) ?>%
-                                </div>
-                                <div class="text-muted">
-                                    Utilidad ($<?= number_format($utilidadPesos, 2) ?>)
-                                </div>
+                                <i class="fas fa-cubes text-primary fa-2x mb-2"></i>
+                                <div class="h4 text-primary mb-1">$<?= number_format(($articulo['precio_costo'] ?? 0) * ($articulo['stock'] ?? 0), 2) ?></div>
+                                <div class="text-muted">Valor Total en Inventario</div>
                             </div>
                         </div>
                     </div>

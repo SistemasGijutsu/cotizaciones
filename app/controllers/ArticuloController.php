@@ -26,11 +26,6 @@ class ArticuloController extends Controller {
             $articulos = $this->articuloModel->getAll();
         }
         
-        // Calcular utilidad para cada artículo
-        foreach ($articulos as &$articulo) {
-            $articulo['utilidad_porcentaje'] = $this->articuloModel->calcularUtilidad($articulo['id']);
-        }
-        
         $this->loadView('articulos/index', [
             'articulos' => $articulos,
             'search' => $search
@@ -53,11 +48,10 @@ class ArticuloController extends Controller {
      * Guardar nuevo artículo
      */
     public function store() {
-        $data = $this->getPostData(['nombre', 'descripcion', 'precio_costo', 'precio_venta', 'stock']);
+        $data = $this->getPostData(['nombre', 'descripcion', 'precio_costo', 'stock']);
         
-        // Convertir precios a float
+        // Convertir precio a float y stock a int
         $data['precio_costo'] = floatval($data['precio_costo']);
-        $data['precio_venta'] = floatval($data['precio_venta']);
         $data['stock'] = intval($data['stock']);
         
         // Validar datos
@@ -102,11 +96,10 @@ class ArticuloController extends Controller {
      * Actualizar artículo
      */
     public function update($id) {
-        $data = $this->getPostData(['nombre', 'descripcion', 'precio_costo', 'precio_venta', 'stock']);
+        $data = $this->getPostData(['nombre', 'descripcion', 'precio_costo', 'stock']);
         
-        // Convertir precios a float
+        // Convertir precio a float y stock a int
         $data['precio_costo'] = floatval($data['precio_costo']);
-        $data['precio_venta'] = floatval($data['precio_venta']);
         $data['stock'] = intval($data['stock']);
         
         // Validar datos
@@ -139,10 +132,6 @@ class ArticuloController extends Controller {
             $this->setAlert('Artículo no encontrado', 'error');
             $this->redirect('index.php?controller=articulo&action=index');
         }
-        
-        // Calcular utilidad
-        $articulo['utilidad_porcentaje'] = $this->articuloModel->calcularUtilidad($id);
-        $articulo['utilidad_monto'] = $articulo['precio_venta'] - $articulo['precio_costo'];
         
         $this->loadView('articulos/show', ['articulo' => $articulo]);
     }

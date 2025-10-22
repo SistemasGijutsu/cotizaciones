@@ -368,13 +368,50 @@ class PDFGenerator {
                                 $cantidad = floatval($detalle['cantidad'] ?? 0);
                                 $total_item = $cantidad * $precio_unitario;
                                 $subtotal += $total_item;
+                                
+                                // Buscar si el artículo pertenece a un paquete con imagen
+                                $paqueteImagen = null;
+                                if (!empty($detalle['id_articulo'])) {
+                                    try {
+                                        require_once __DIR__ . '/../../config/database.php';
+                                        $db = Database::getInstance()->getConnection();
+                                        $sql = "SELECT p.imagen, p.nombre as paquete_nombre 
+                                                FROM paquetes p
+                                                INNER JOIN paquete_articulos pa ON pa.id_paquete = p.id
+                                                WHERE pa.id_articulo = :articulo_id AND p.imagen IS NOT NULL
+                                                LIMIT 1";
+                                        $stmt = $db->prepare($sql);
+                                        $stmt->execute([':articulo_id' => $detalle['id_articulo']]);
+                                        $paqueteInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+                                        if ($paqueteInfo && !empty($paqueteInfo['imagen'])) {
+                                            $paqueteImagen = $paqueteInfo;
+                                        }
+                                    } catch (Exception $e) {
+                                        // Si falla, simplemente no mostramos imagen
+                                    }
+                                }
                             ?>
                             <tr>
                                 <td class="text-center"><?php echo $item_num++; ?></td>
                                 <td>
-                                    <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
-                                    <?php if (!empty($detalle['descripcion'])): ?>
-                                    <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
+                                    <?php if ($paqueteImagen): ?>
+                                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                            <img src="<?php echo __DIR__ . '/../../public/images/paquetes/' . $paqueteImagen['imagen']; ?>" 
+                                                 alt="<?php echo htmlspecialchars($paqueteImagen['paquete_nombre']); ?>" 
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                            <div>
+                                                <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
+                                                <br><small style="color: #007bff;"><i>Paquete: <?php echo htmlspecialchars($paqueteImagen['paquete_nombre']); ?></i></small>
+                                                <?php if (!empty($detalle['descripcion'])): ?>
+                                                <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
+                                        <?php if (!empty($detalle['descripcion'])): ?>
+                                        <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center"><?php echo number_format($cantidad, 0); ?></td>
