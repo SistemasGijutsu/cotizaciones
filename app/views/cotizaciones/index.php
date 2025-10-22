@@ -130,8 +130,12 @@ include_once 'app/views/layouts/header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
+                                        <a href="index.php?controller=cotizacion&action=generarPDF&id=<?php echo $cotizacion['id']; ?>&preview=1" 
+                                           class="btn btn-outline-primary" title="Ver PDF" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                         <a href="index.php?controller=cotizacion&action=generarPDF&id=<?php echo $cotizacion['id']; ?>" 
-                                           class="btn btn-outline-danger" title="Generar PDF" target="_blank">
+                                           class="btn btn-outline-danger" title="Descargar PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         

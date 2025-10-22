@@ -514,12 +514,30 @@ class CotizacionController extends Controller {
             $resultado = $pdfGenerator->generarCotizacionInfo($id);
             
             if ($resultado && $resultado['success']) {
+                // Si el resultado es HTML (fallback) o si se solicita preview, redirigimos al URL público
+                $preview = $this->getGetData('preview');
                 if ($resultado['type'] === 'html') {
-                    // Redirigir a la página HTML para imprimir
+                    // Redirigir a la página HTML para imprimir/visualizar
                     $this->redirect($resultado['url']);
                 } else {
-                    // Descargar archivo PDF
-                    $this->downloadFile($resultado['filepath'], $resultado['filename']);
+                    // PDF generado: si se solicita preview, mostrar inline en el navegador
+                    if ($preview) {
+                        $filepath = $resultado['filepath'];
+                        if (file_exists($filepath)) {
+                            // Enviar headers para mostrar inline
+                            header('Content-Type: application/pdf');
+                            header('Content-Disposition: inline; filename="' . $resultado['filename'] . '"');
+                            header('Content-Length: ' . filesize($filepath));
+                            readfile($filepath);
+                            exit;
+                        } else {
+                            Helper::showAlert('Archivo PDF no encontrado para previsualizar', 'error');
+                            $this->redirect('index.php?controller=cotizacion');
+                        }
+                    } else {
+                        // Descargar archivo PDF
+                        $this->downloadFile($resultado['filepath'], $resultado['filename']);
+                    }
                 }
             } else {
                 Helper::showAlert('Error al generar el PDF', 'error');

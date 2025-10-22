@@ -97,42 +97,47 @@ class PDFGenerator {
                 }
                 
                 .header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 30px;
-                    padding-bottom: 20px;
-                    border-bottom: 3px solid #007bff;
+                    position: relative; /* necesario para el posicionamiento absoluto del recuadro */
+                    margin-bottom: 10px;
+                    padding-bottom: 10px;
                 }
-                
+
+                /* Dejamos espacio a la derecha para que el recuadro no tape el contenido */
                 .empresa-info {
-                    flex: 1;
+                    margin-right: 320px; /* espacio reservado para .cotizacion-info (ajustable) */
                 }
-                
+
                 .empresa-info h1 {
                     color: #007bff;
-                    font-size: 18px;
-                    margin-bottom: 10px;
+                    font-size: 20px;
+                    margin-bottom: 6px;
                     font-weight: bold;
                 }
-                
+
                 .empresa-info p {
                     margin-bottom: 3px;
                     font-size: 11px;
                 }
-                
+
                 .cotizacion-info {
+                    position: absolute;
+                    right: 0;
+                    top: 0; /* alineado con la parte superior del header */
+                    width: 300px; /* ancho fijo para mantener consistencia en PDF */
                     text-align: right;
-                    flex: 1;
                     background: #f8f9fa;
-                    padding: 15px;
+                    padding: 12px 14px;
                     border-radius: 8px;
+                    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
                 }
-                
+
+                /* Reducir tamaño del título y mejorar jerarquía visual */
                 .cotizacion-info h2 {
                     color: #007bff;
-                    font-size: 16px;
-                    margin-bottom: 10px;
+                    font-size: 13px;
+                    margin-bottom: 6px;
+                    letter-spacing: 1px;
+                    font-weight: 700;
                 }
                 
                 .info-grid {

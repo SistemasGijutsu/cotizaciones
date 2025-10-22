@@ -39,8 +39,12 @@ $detalles = $cotizacion['detalles'] ?? [];
                        class="btn btn-info">
                         <i class="fas fa-history me-1"></i>Historial
                     </a>
+                    <a href="/mod_cotizacion/index.php?controller=cotizacion&action=generarPDF&id=<?= $cotizacion['id'] ?>&preview=1" 
+                       class="btn btn-outline-primary" target="_blank" title="Ver PDF">
+                        <i class="fas fa-eye me-1"></i>Ver PDF
+                    </a>
                     <a href="/mod_cotizacion/index.php?controller=cotizacion&action=generarPDF&id=<?= $cotizacion['id'] ?>" 
-                       class="btn btn-outline-danger">
+                       class="btn btn-outline-danger" title="Descargar PDF">
                         <i class="fas fa-file-pdf me-1"></i>PDF
                     </a>
                     <a href="/mod_cotizacion/index.php?controller=cotizacion&action=enviarEmail&id=<?= $cotizacion['id'] ?>" 
