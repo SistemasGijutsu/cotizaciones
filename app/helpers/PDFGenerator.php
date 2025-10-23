@@ -449,21 +449,19 @@ class PDFGenerator {
                                         $subtotal += $total_item;
                                     ?>
                                     <tr>
-                                        <td class="text-center"><?php echo $item_num++; ?></td>
-                                        <td>
+                                        <td class="text-center" style="vertical-align: top; padding-top: 12px;"><?php echo $item_num++; ?></td>
+                                        <td style="vertical-align: top; padding-top: 12px;">
                                             <strong style="font-size: 13px;"><?php echo htmlspecialchars($nombre); ?></strong>
                                             <?php if (!empty($descripcion)): ?>
-                                            <br>
-                                            <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
-                                                <strong style="color: #007bff; font-size: 11px;">Descripción:</strong><br>
-                                                <small style="color: #333; line-height: 1.6;">
-                                                    <?php echo nl2br(htmlspecialchars($descripcion)); ?>
-                                                </small>
+                                            <br><br>
+                                            <strong style="font-size: 11px;">Descripción:</strong><br>
+                                            <div style="margin-top: 4px; font-size: 11px; color: #333; line-height: 1.5;">
+                                                <?php echo nl2br(htmlspecialchars($descripcion)); ?>
                                             </div>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-center"><strong><?php echo number_format($cantidad, 0, ',', '.'); ?></strong></td>
-                                        <td class="text-right"><strong>$<?php echo number_format($precio_unitario, 0, ',', '.'); ?></strong></td>
+                                        <td class="text-center" style="vertical-align: top; padding-top: 12px;"><strong><?php echo number_format($cantidad, 0, ',', '.'); ?></strong></td>
+                                        <td class="text-right" style="vertical-align: top; padding-top: 12px;"><strong><?php echo number_format($precio_unitario, 0, ',', '.'); ?></strong></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>

@@ -74,13 +74,16 @@ class Cotizacion extends Model {
     private function addDetalleCotizacion($cotizacionId, $item) {
         // Verificar si es un paquete o un artículo
         if (isset($item['tipo']) && $item['tipo'] === 'paquete') {
-            // Guardar paquete
+            // Deshabilitar temporalmente las comprobaciones de FK para permitir id_articulo = 0
+            $this->db->exec("SET FOREIGN_KEY_CHECKS = 0");
+            
+            // Guardar paquete con id_articulo = 0 (workaround para la PK compuesta)
             $sql = "INSERT INTO cotizacion_detalle 
-                    (id_cotizacion, tipo_item, id_paquete, nombre_item, descripcion_item, cantidad, precio_costo, precio_venta) 
-                    VALUES (:id_cotizacion, 'paquete', :id_paquete, :nombre, :descripcion, :cantidad, :precio_costo, :precio_venta)";
+                    (id_cotizacion, id_articulo, tipo_item, id_paquete, nombre_item, descripcion_item, cantidad, precio_costo, precio_venta) 
+                    VALUES (:id_cotizacion, 0, 'paquete', :id_paquete, :nombre, :descripcion, :cantidad, :precio_costo, :precio_venta)";
             
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
+            $result = $stmt->execute([
                 ':id_cotizacion' => $cotizacionId,
                 ':id_paquete' => $item['id_paquete'],
                 ':nombre' => $item['nombre'],
@@ -89,6 +92,11 @@ class Cotizacion extends Model {
                 ':precio_costo' => $item['precio_costo'],
                 ':precio_venta' => $item['precio']
             ]);
+            
+            // Re-habilitar comprobaciones de FK
+            $this->db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            
+            return $result;
         } else {
             // Guardar artículo (comportamiento original)
             $articulo = $this->articuloModel->getById($item['id_articulo']);
