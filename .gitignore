@@ -19,6 +19,8 @@ cache/
 tmp/
 *.tmp
 *.cache
+public/temp/*.pdf
+public/temp/*.html
 
 # Archivos de sesión PHP
 sessions/
@@ -34,6 +36,8 @@ backups/
 test.php
 debug.php
 phpinfo.php
+scripts/
+preview_*.html
 
 # Dependencias y librerías
 vendor/
