@@ -93,39 +93,39 @@ class CotizacionController extends Controller {
                             'utilidad' => floatval($item['utilidad'] ?? 0)
                         ];
                     } elseif ($item['tipo'] === 'paquete') {
-                        // Expandir paquete a sus artículos
+                        // Guardar paquete como un solo ítem
                         $paqueteId = intval($item['id']);
                         $cantidadPaquete = intval($item['cantidad']);
-                        // El precio enviado desde la UI se encuentra en items[][precio]
                         $precioPaquete = floatval($item['precio'] ?? 0);
 
+                        // Obtener información del paquete
+                        $paquete = $this->paqueteModel->getById($paqueteId);
                         $articulosPaquete = $this->paqueteModel->getArticulosPaquete($paqueteId);
-                        if (!empty($articulosPaquete)) {
-                            // Calcular costo total del paquete para distribuir el precio proporcionalmente
-                            $totalCosto = 0;
-                            foreach ($articulosPaquete as $ap) {
-                                $totalCosto += floatval($ap['precio_costo']) * intval($ap['cantidad']);
-                            }
-
-                            // Si no hay precioPaquete, usar suma de costos como precio (fallback)
-                            if ($precioPaquete <= 0) {
-                                $precioPaquete = $totalCosto;
-                            }
-
-                            // Distribuir precio entre los artículos según su aporte al costo
-                            foreach ($articulosPaquete as $ap) {
-                                $artCostoTotal = floatval($ap['precio_costo']) * intval($ap['cantidad']);
-                                $proporcion = $totalCosto > 0 ? ($artCostoTotal / $totalCosto) : (1 / count($articulosPaquete));
-                                $precioUnitarioArticulo = ($precioPaquete * $proporcion) / intval($ap['cantidad']);
-
-                                $items[] = [
-                                    'id_articulo' => $ap['id_articulo'],
-                                    'cantidad' => intval($ap['cantidad']) * $cantidadPaquete,
-                                    'precio' => floatval($precioUnitarioArticulo),
-                                    'utilidad' => 0
-                                ];
-                            }
+                        
+                        // Calcular costo total del paquete
+                        $totalCosto = 0;
+                        foreach ($articulosPaquete as $ap) {
+                            $totalCosto += floatval($ap['precio_costo']) * intval($ap['cantidad']);
                         }
+                        
+                        // Usar la descripción del paquete (del campo descripcion de la tabla paquetes)
+                        $descripcion = $paquete['descripcion'] ?? '';
+                        
+                        // Si no hay precio, usar el costo como fallback
+                        if ($precioPaquete <= 0) {
+                            $precioPaquete = $totalCosto;
+                        }
+
+                        $items[] = [
+                            'tipo' => 'paquete',
+                            'id_paquete' => $paqueteId,
+                            'nombre' => $paquete['nombre'],
+                            'descripcion' => $descripcion,
+                            'cantidad' => $cantidadPaquete,
+                            'precio_costo' => $totalCosto,
+                            'precio' => $precioPaquete,
+                            'utilidad' => $precioPaquete - $totalCosto
+                        ];
                     }
                     // TODO: Implementar soporte para paquetes
                 }

@@ -104,12 +104,18 @@ $errors = $errors ?? [];
                                             <td><?= htmlspecialchars($item['nombre']) ?></td>
                                             <td>
                                                 <input type="number" class="form-control form-control-sm" 
-                                                       name="articulos[<?= $item['id_articulo'] ?>]" 
-                                                       value="<?= $item['cantidad'] ?>" min="1" style="width: 80px;">
+                                                       name="articulos[<?= htmlspecialchars($item['id_articulo'] ?? '') ?>]" 
+                                                       value="<?= htmlspecialchars($item['cantidad'] ?? 1) ?>" min="1" style="width: 80px;">
                                             </td>
-                                            <td>$<?= number_format($item['precio_costo'], 2) ?></td>
-                                            <td>$<?= number_format($item['precio_venta'], 2) ?></td>
-                                            <td>$<?= number_format($item['precio_venta'] * $item['cantidad'], 2) ?></td>
+                                            <?php
+                                                // Asegurar valores numéricos por defecto para evitar warnings y pasar null a number_format
+                                                $precio_costo = isset($item['precio_costo']) && $item['precio_costo'] !== null ? (float)$item['precio_costo'] : 0.0;
+                                                $precio_venta = isset($item['precio_venta']) && $item['precio_venta'] !== null ? (float)$item['precio_venta'] : 0.0;
+                                                $cantidad = isset($item['cantidad']) && $item['cantidad'] !== null ? (int)$item['cantidad'] : 1;
+                                            ?>
+                                            <td>$<?= number_format($precio_costo, 2) ?></td>
+                                            <td>$<?= number_format($precio_venta, 2) ?></td>
+                                            <td>$<?= number_format($precio_venta * $cantidad, 2) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>

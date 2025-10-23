@@ -72,31 +72,51 @@ class Cotizacion extends Model {
      * Agregar detalle a la cotización
      */
     private function addDetalleCotizacion($cotizacionId, $item) {
-        $articulo = $this->articuloModel->getById($item['id_articulo']);
-        
-        $sql = "INSERT INTO cotizacion_detalle 
-                (id_cotizacion, id_articulo, cantidad, precio_costo, precio_venta) 
-                VALUES (:id_cotizacion, :id_articulo, :cantidad, :precio_costo, :precio_venta)";
-        
-        $stmt = $this->db->prepare($sql);
-        // Determinar precio de venta a guardar: prioridad al precio enviado en el item
-        $precioVenta = isset($item['precio']) && $item['precio'] !== '' ? floatval($item['precio']) : null;
-        if ($precioVenta === null) {
-            // Fallback al campo del artículo si existiera, sino al costo
-            if (isset($articulo['precio_venta']) && $articulo['precio_venta'] !== null) {
-                $precioVenta = floatval($articulo['precio_venta']);
-            } else {
-                $precioVenta = floatval($articulo['precio_costo']);
+        // Verificar si es un paquete o un artículo
+        if (isset($item['tipo']) && $item['tipo'] === 'paquete') {
+            // Guardar paquete
+            $sql = "INSERT INTO cotizacion_detalle 
+                    (id_cotizacion, tipo_item, id_paquete, nombre_item, descripcion_item, cantidad, precio_costo, precio_venta) 
+                    VALUES (:id_cotizacion, 'paquete', :id_paquete, :nombre, :descripcion, :cantidad, :precio_costo, :precio_venta)";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id_cotizacion' => $cotizacionId,
+                ':id_paquete' => $item['id_paquete'],
+                ':nombre' => $item['nombre'],
+                ':descripcion' => $item['descripcion'],
+                ':cantidad' => $item['cantidad'],
+                ':precio_costo' => $item['precio_costo'],
+                ':precio_venta' => $item['precio']
+            ]);
+        } else {
+            // Guardar artículo (comportamiento original)
+            $articulo = $this->articuloModel->getById($item['id_articulo']);
+            
+            $sql = "INSERT INTO cotizacion_detalle 
+                    (id_cotizacion, tipo_item, id_articulo, cantidad, precio_costo, precio_venta) 
+                    VALUES (:id_cotizacion, 'articulo', :id_articulo, :cantidad, :precio_costo, :precio_venta)";
+            
+            $stmt = $this->db->prepare($sql);
+            // Determinar precio de venta a guardar: prioridad al precio enviado en el item
+            $precioVenta = isset($item['precio']) && $item['precio'] !== '' ? floatval($item['precio']) : null;
+            if ($precioVenta === null) {
+                // Fallback al campo del artículo si existiera, sino al costo
+                if (isset($articulo['precio_venta']) && $articulo['precio_venta'] !== null) {
+                    $precioVenta = floatval($articulo['precio_venta']);
+                } else {
+                    $precioVenta = floatval($articulo['precio_costo']);
+                }
             }
-        }
 
-        return $stmt->execute([
-            ':id_cotizacion' => $cotizacionId,
-            ':id_articulo' => $item['id_articulo'],
-            ':cantidad' => $item['cantidad'],
-            ':precio_costo' => $articulo['precio_costo'],
-            ':precio_venta' => $precioVenta
-        ]);
+            return $stmt->execute([
+                ':id_cotizacion' => $cotizacionId,
+                ':id_articulo' => $item['id_articulo'],
+                ':cantidad' => $item['cantidad'],
+                ':precio_costo' => $articulo['precio_costo'],
+                ':precio_venta' => $precioVenta
+            ]);
+        }
     }
     
     /**
@@ -152,9 +172,18 @@ class Cotizacion extends Model {
      * Obtener detalles de una cotización
      */
     public function getDetallesCotizacion($cotizacionId) {
-        $sql = "SELECT cd.*, a.nombre, a.descripcion, a.stock
+        $sql = "SELECT cd.*, 
+                       CASE 
+                           WHEN cd.tipo_item = 'paquete' THEN cd.nombre_item
+                           ELSE a.nombre 
+                       END as nombre,
+                       CASE 
+                           WHEN cd.tipo_item = 'paquete' THEN cd.descripcion_item
+                           ELSE a.descripcion 
+                       END as descripcion,
+                       a.stock
                 FROM cotizacion_detalle cd
-                INNER JOIN articulos a ON cd.id_articulo = a.id
+                LEFT JOIN articulos a ON cd.id_articulo = a.id
                 WHERE cd.id_cotizacion = :cotizacion_id";
         
         $stmt = $this->query($sql, [':cotizacion_id' => $cotizacionId]);

@@ -175,10 +175,11 @@ class PDFGenerator {
                     grid-template-columns: 1fr 1fr;
                     gap: 20px;
                     margin-bottom: 30px;
+                    margin-top: 60px; /* espacio debajo del recuadro COTIZACIÓN */
                 }
                 
                 .info-section {
-                    background: #f8f9fa;
+                    background: transparent; /* fondo transparente */
                     padding: 15px;
                     border-radius: 8px;
                     border-left: 4px solid #007bff;
@@ -393,93 +394,83 @@ class PDFGenerator {
                 <div class="table-container">
                     <table class="items-table">
                         <thead>
-                            <tr>
-                                <th style="width: 8%;">#</th>
-                                <th style="width: 40%;">Descripción</th>
-                                <th style="width: 10%;" class="text-center">Cant.</th>
-                                <th style="width: 18%;" class="text-right">Precio Unit.</th>
-                                <th style="width: 24%;" class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $item_num = 1;
-                            foreach ($detalles as $detalle): 
-                                // Los campos vienen de la consulta JOIN: cd.*, a.nombre, a.descripcion
-                                // En la tabla cotizacion_detalle el precio se guarda como precio_venta
-                                $precio_unitario = floatval($detalle['precio_venta'] ?? $detalle['precio'] ?? 0);
-                                $cantidad = floatval($detalle['cantidad'] ?? 0);
-                                $total_item = $cantidad * $precio_unitario;
-                                $subtotal += $total_item;
-                                
-                                // Buscar si el artículo pertenece a un paquete con imagen
-                                $paqueteImagen = null;
-                                if (!empty($detalle['id_articulo'])) {
-                                    try {
-                                        require_once __DIR__ . '/../../config/database.php';
-                                        $db = Database::getInstance()->getConnection();
-                                        $sql = "SELECT p.imagen, p.nombre as paquete_nombre 
-                                                FROM paquetes p
-                                                INNER JOIN paquete_articulos pa ON pa.id_paquete = p.id
-                                                WHERE pa.id_articulo = :articulo_id AND p.imagen IS NOT NULL
-                                                LIMIT 1";
-                                        $stmt = $db->prepare($sql);
-                                        $stmt->execute([':articulo_id' => $detalle['id_articulo']]);
-                                        $paqueteInfo = $stmt->fetch(PDO::FETCH_ASSOC);
-                                        if ($paqueteInfo && !empty($paqueteInfo['imagen'])) {
-                                            $paqueteImagen = $paqueteInfo;
+                                    <tr>
+                                        <th style="width: 8%;">#</th>
+                                        <th style="width: 62%;">Descripción</th>
+                                        <th style="width: 10%;" class="text-center">Cantidad</th>
+                                        <th style="width: 20%;" class="text-right">Precio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    // Preprocesar detalles: agrupar paquetes para mostrarlos como una sola fila
+                                    $processedDetalles = [];
+                                    foreach ($detalles as $d) {
+                                        $isPaquete = (isset($d['tipo_item']) && $d['tipo_item'] === 'paquete') || !empty($d['id_paquete']) || !empty($d['nombre_item']);
+                                        if ($isPaquete) {
+                                            $key = 'paquete_' . ($d['id_paquete'] ?? md5($d['nombre_item'] ?? ($d['nombre'] ?? '')));
+                                            if (!isset($processedDetalles[$key])) {
+                                                $processedDetalles[$key] = [
+                                                    'tipo' => 'paquete',
+                                                    'id_paquete' => $d['id_paquete'] ?? null,
+                                                    'nombre' => $d['nombre_item'] ?? $d['nombre'] ?? 'Paquete',
+                                                    'descripcion' => $d['descripcion_item'] ?? $d['descripcion'] ?? '',
+                                                    'precio_unitario' => floatval($d['precio_venta'] ?? $d['precio'] ?? 0),
+                                                    'cantidad' => floatval($d['cantidad'] ?? 0)
+                                                ];
+                                            } else {
+                                                // Acumular cantidades si hay múltiples líneas del mismo paquete
+                                                $processedDetalles[$key]['cantidad'] += floatval($d['cantidad'] ?? 0);
+                                                // Si el precio unitario está presente y es mayor a 0, mantenlo (no sobrescribir si ya existe)
+                                                if (empty($processedDetalles[$key]['precio_unitario']) && !empty($d['precio_venta'])) {
+                                                    $processedDetalles[$key]['precio_unitario'] = floatval($d['precio_venta']);
+                                                }
+                                            }
+                                        } else {
+                                            // Artículo independiente
+                                            $processedDetalles[] = [
+                                                'tipo' => 'articulo',
+                                                'nombre' => $d['nombre'] ?? 'Artículo',
+                                                'descripcion' => $d['descripcion'] ?? '',
+                                                'precio_unitario' => floatval($d['precio_venta'] ?? $d['precio'] ?? 0),
+                                                'cantidad' => floatval($d['cantidad'] ?? 0)
+                                            ];
                                         }
-                                    } catch (Exception $e) {
-                                        // Si falla, simplemente no mostramos imagen
                                     }
-                                }
-                            ?>
-                            <tr>
-                                <td class="text-center"><?php echo $item_num++; ?></td>
-                                <td>
-                                    <?php if ($paqueteImagen): ?>
-                                        <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                            <img src="<?php echo __DIR__ . '/../../public/images/paquetes/' . $paqueteImagen['imagen']; ?>" 
-                                                 alt="<?php echo htmlspecialchars($paqueteImagen['paquete_nombre']); ?>" 
-                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                            <div>
-                                                <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
-                                                <br><small style="color: #007bff;"><i>Paquete: <?php echo htmlspecialchars($paqueteImagen['paquete_nombre']); ?></i></small>
-                                                <?php if (!empty($detalle['descripcion'])): ?>
-                                                <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
-                                                <?php endif; ?>
+
+                                    // Renderizar detalles procesados
+                                    $item_num = 1;
+                                    foreach ($processedDetalles as $detalle):
+                                        $nombre = $detalle['nombre'] ?? 'Artículo';
+                                        $descripcion = $detalle['descripcion'] ?? '';
+                                        $precio_unitario = floatval($detalle['precio_unitario'] ?? 0);
+                                        $cantidad = floatval($detalle['cantidad'] ?? 0);
+                                        $total_item = $cantidad * $precio_unitario;
+                                        $subtotal += $total_item;
+                                    ?>
+                                    <tr>
+                                        <td class="text-center"><?php echo $item_num++; ?></td>
+                                        <td>
+                                            <strong style="font-size: 13px;"><?php echo htmlspecialchars($nombre); ?></strong>
+                                            <?php if (!empty($descripcion)): ?>
+                                            <br>
+                                            <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
+                                                <strong style="color: #007bff; font-size: 11px;">Descripción:</strong><br>
+                                                <small style="color: #333; line-height: 1.6;">
+                                                    <?php echo nl2br(htmlspecialchars($descripcion)); ?>
+                                                </small>
                                             </div>
-                                        </div>
-                                    <?php else: ?>
-                                        <strong><?php echo $detalle['nombre'] ?? 'Artículo'; ?></strong>
-                                        <?php if (!empty($detalle['descripcion'])): ?>
-                                        <br><small style="color: #6c757d;"><?php echo $detalle['descripcion']; ?></small>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-center"><?php echo number_format($cantidad, 0); ?></td>
-                                <td class="text-right"><?php echo '$' . number_format($precio_unitario, 0); ?></td>
-                                <td class="text-right"><strong><?php echo '$' . number_format($total_item, 0); ?></strong></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center"><strong><?php echo number_format($cantidad, 0, ',', '.'); ?></strong></td>
+                                        <td class="text-right"><strong>$<?php echo number_format($precio_unitario, 0, ',', '.'); ?></strong></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
                     </table>
                 </div>
                 
-                <!-- Totales -->
-                <div class="totals-section">
-                    <table class="totals-table">
-                        <tr>
-                            <td class="total-label">Subtotal:</td>
-                            <td class="text-right"><?php echo '$' . number_format($subtotal, 0); ?></td>
-                        </tr>
-                        <tr class="total-final">
-                            <td>TOTAL:</td>
-                            <td class="text-right"><?php echo '$' . number_format($cotizacion['total_venta'], 0); ?></td>
-                        </tr>
-                        <!-- Utilidad removida del desglose en PDF (solo se muestra en el sistema) -->
-                    </table>
-                </div>
+                <!-- Totales removidos - solo para uso interno -->
                 
                 <!-- Validez y Observaciones -->
                 <div class="validez">
