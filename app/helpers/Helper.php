@@ -10,7 +10,11 @@ if (!class_exists('Helper')) {
      * Formatear un número como moneda
      */
     public static function formatCurrency($amount) {
-        return '$' . number_format($amount, 2, '.', ',');
+        // Aceptar null o valores no numéricos: normalizar a 0
+        if ($amount === null || $amount === '' || !is_numeric($amount)) {
+            $amount = 0;
+        }
+        return '$' . number_format((float)$amount, 2, '.', ',');
     }
     
     /**

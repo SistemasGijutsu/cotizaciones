@@ -153,7 +153,7 @@
                                 <div>
                                     <h6 class="mb-1"><?php echo $articulo['nombre']; ?></h6>
                                     <small class="text-muted">
-                                        <?php echo Helper::formatCurrency($articulo['precio_venta']); ?>
+                                        <?php echo Helper::formatCurrency($articulo['precio_venta'] ?? 0); ?>
                                     </small>
                                 </div>
                                 <span class="badge bg-primary rounded-pill">
