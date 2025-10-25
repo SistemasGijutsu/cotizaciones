@@ -123,7 +123,8 @@ class PDFGenerator {
                 .content-wrapper {
                     position: relative;
                     z-index: 1;
-                    padding: 140px 30px 100px 30px; /* top, right, bottom, left - ajustar según tu membrete */
+                    /* Reducimos el padding-top para que el recuadro de COTIZACIÓN pueda subirse más hacia arriba */
+                    padding: 100px 30px 100px 30px; /* top, right, bottom, left - ajustar según tu membrete */
                 }
                 
                 .header {
@@ -151,14 +152,16 @@ class PDFGenerator {
 
                 .cotizacion-info {
                     position: absolute;
-                    right: 30px;
-                    top: 20px; /* posición desde el inicio del content-wrapper */
-                    width: 260px;
+                    right: 20px;
+                    /* Subimos el bloque hacia arriba (puede superponerse ligeramente al membrete si existe) */
+                    top: -30px; /* posición desde el inicio del content-wrapper */
+                    width: 240px;
                     text-align: right;
-                    background: rgba(255,255,255,0.95); /* fondo blanco semi-transparente */
-                    padding: 10px 12px;
+                    background: rgba(255,255,255,0.98); /* fondo blanco casi opaco para mejor legibilidad */
+                    padding: 10px 14px;
                     border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+                    z-index: 3; /* asegurarse que quede por encima del membrete */
                 }
 
                 /* Reducir tamaño del título y mejorar jerarquía visual */
@@ -172,17 +175,20 @@ class PDFGenerator {
                 
                 .info-grid {
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
+                    /* Hacemos que la información del cliente ocupe todo el ancho para un aspecto más empresarial */
+                    grid-template-columns: 1fr;
                     gap: 20px;
                     margin-bottom: 30px;
-                    margin-top: 60px; /* espacio debajo del recuadro COTIZACIÓN */
+                    /* Bajamos la sección un poco para que no tape el logo/membrete */
+                    margin-top: 50px; /* ajustado para evitar superposición con el membrete */
                 }
                 
                 .info-section {
-                    background: transparent; /* fondo transparente */
-                    padding: 15px;
+                    background: #ffffff; /* fondo blanco para aspecto profesional */
+                    padding: 18px 20px;
                     border-radius: 8px;
-                    border-left: 4px solid #007bff;
+                    border-left: 6px solid #007bff;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
                 }
                 
                 .info-section h3 {
@@ -195,6 +201,14 @@ class PDFGenerator {
                 .info-section p {
                     margin-bottom: 3px;
                     font-size: 11px;
+                }
+
+                /* Estilo para el nombre del cliente, mayor jerarquía */
+                .client-name {
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #212529;
+                    margin-bottom: 8px;
                 }
                 
                 .table-container {
@@ -363,30 +377,21 @@ class PDFGenerator {
                 <div class="info-grid">
                     <div class="info-section">
                         <h3>INFORMACIÓN DEL CLIENTE</h3>
-                        <p><strong>Cliente:</strong> <?php echo $cliente['nombre'] ?? 'N/A'; ?></p>
+                        <p class="client-name"><?php echo htmlspecialchars($cliente['nombre'] ?? 'N/A'); ?></p>
                         <?php if (!empty($cliente['documento'])): ?>
-                        <p><strong>NIT/CC:</strong> <?php echo $cliente['documento']; ?></p>
+                        <p><strong>NIT/CC:</strong> <?php echo htmlspecialchars($cliente['documento']); ?></p>
                         <?php endif; ?>
-                        <p><strong>Dirección:</strong> <?php echo $cliente['direccion'] ?? ''; ?></p>
+                        <p><strong>Dirección:</strong> <?php echo htmlspecialchars($cliente['direccion'] ?? ''); ?></p>
                         <?php if (!empty($cliente['ciudad'])): ?>
-                        <p><strong>Ciudad:</strong> <?php echo $cliente['ciudad']; ?></p>
+                        <p><strong>Ciudad:</strong> <?php echo htmlspecialchars($cliente['ciudad']); ?></p>
                         <?php endif; ?>
-                        <p><strong>Teléfono:</strong> <?php echo $cliente['telefono'] ?? ''; ?></p>
+                        <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($cliente['telefono'] ?? ''); ?></p>
                         <?php if (!empty($cliente['correo'])): ?>
-                        <p><strong>Email:</strong> <?php echo $cliente['correo']; ?></p>
+                        <p><strong>Email:</strong> <?php echo htmlspecialchars($cliente['correo']); ?></p>
                         <?php endif; ?>
                         <?php if (!empty($cliente['contacto'])): ?>
-                        <p><strong>Contacto:</strong> <?php echo $cliente['contacto']; ?></p>
+                        <p><strong>Contacto:</strong> <?php echo htmlspecialchars($cliente['contacto']); ?></p>
                         <?php endif; ?>
-                    </div>
-                    
-                    <div class="info-section">
-                        <h3>DETALLES DE LA COTIZACIÓN</h3>
-                        <p><strong>Vendedor:</strong> <?php echo $_SESSION['username'] ?? 'Sistema'; ?></p>
-                        <p><strong>Fecha de elaboración:</strong> <?php echo date('d/m/Y H:i'); ?></p>
-                        <p><strong>Moneda:</strong> Pesos Colombianos (COP)</p>
-                        <p><strong>Forma de pago:</strong> Según acuerdo comercial</p>
-                        <p><strong>Tiempo de entrega:</strong> 15 días hábiles</p>
                     </div>
                 </div>
                 
@@ -472,7 +477,7 @@ class PDFGenerator {
                 
                 <!-- Validez y Observaciones -->
                 <div class="validez">
-                    <h4>⏰ VALIDEZ DE LA COTIZACIÓN</h4>
+                    <h4>VALIDEZ DE LA COTIZACIÓN</h4>
                     <p>Esta cotización tiene una validez de 30 días calendario a partir de la fecha de emisión.</p>
                 </div>
                 
@@ -491,7 +496,7 @@ class PDFGenerator {
                         <div>
                             <h4>INFORMACIÓN DE CONTACTO</h4>
                             <p><strong>Generado:</strong> <?php echo date('d/m/Y H:i:s'); ?></p>
-                            <p><strong>Sistema:</strong> Cotizaciones Empresariales v1.0</p>
+                            <p><strong>Sistema:</strong> Cotizaciones Pidelo</p>
                             <p style="margin-top: 10px; color: #007bff; font-weight: bold;">
                                 ¡Gracias por confiar en nosotros!
                             </p>
