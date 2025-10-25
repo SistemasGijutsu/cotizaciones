@@ -300,8 +300,8 @@ class PDFGenerator {
                 }
                 
                 .footer {
-                    margin-top: 40px;
-                    padding-top: 20px;
+                    margin-top: 15px;
+                    padding-top: 15px;
                     border-top: 2px solid #dee2e6;
                     font-size: 10px;
                     color: #6c757d;
@@ -317,14 +317,21 @@ class PDFGenerator {
                     background: #fff3cd;
                     border: 1px solid #ffeaa7;
                     border-radius: 5px;
-                    padding: 10px;
-                    margin: 20px 0;
+                    padding: 6px 10px;
+                    margin: 12px 0;
                 }
                 
                 .validez h4 {
                     color: #856404;
-                    font-size: 12px;
-                    margin-bottom: 5px;
+                    font-size: 11px;
+                    margin-bottom: 3px;
+                    font-weight: bold;
+                }
+                
+                .validez p {
+                    margin: 0;
+                    font-size: 10px;
+                    line-height: 1.3;
                 }
                 
                 .observaciones {
