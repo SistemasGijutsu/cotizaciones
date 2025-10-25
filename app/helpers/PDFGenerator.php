@@ -211,6 +211,20 @@ class PDFGenerator {
                     margin-bottom: 8px;
                 }
                 
+                /* Estilos para imágenes de paquetes en la tabla */
+                .paquete-imagen {
+                    max-width: 120px;
+                    max-height: 120px;
+                    width: auto;
+                    height: auto;
+                    border-radius: 6px;
+                    border: 2px solid #dee2e6;
+                    margin-top: 8px;
+                    margin-bottom: 8px;
+                    display: block;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                
                 .table-container {
                     margin: 30px 0;
                 }
@@ -421,7 +435,8 @@ class PDFGenerator {
                                                     'nombre' => $d['nombre_item'] ?? $d['nombre'] ?? 'Paquete',
                                                     'descripcion' => $d['descripcion_item'] ?? $d['descripcion'] ?? '',
                                                     'precio_unitario' => floatval($d['precio_venta'] ?? $d['precio'] ?? 0),
-                                                    'cantidad' => floatval($d['cantidad'] ?? 0)
+                                                    'cantidad' => floatval($d['cantidad'] ?? 0),
+                                                    'imagen' => $d['paquete_imagen'] ?? null
                                                 ];
                                             } else {
                                                 // Acumular cantidades si hay múltiples líneas del mismo paquete
@@ -438,7 +453,8 @@ class PDFGenerator {
                                                 'nombre' => $d['nombre'] ?? 'Artículo',
                                                 'descripcion' => $d['descripcion'] ?? '',
                                                 'precio_unitario' => floatval($d['precio_venta'] ?? $d['precio'] ?? 0),
-                                                'cantidad' => floatval($d['cantidad'] ?? 0)
+                                                'cantidad' => floatval($d['cantidad'] ?? 0),
+                                                'imagen' => null
                                             ];
                                         }
                                     }
@@ -452,11 +468,26 @@ class PDFGenerator {
                                         $cantidad = floatval($detalle['cantidad'] ?? 0);
                                         $total_item = $cantidad * $precio_unitario;
                                         $subtotal += $total_item;
+                                        
+                                        // Preparar imagen del paquete si existe
+                                        $imagenData = null;
+                                        if (!empty($detalle['imagen'])) {
+                                            $imagenPath = __DIR__ . '/../../public/images/paquetes/' . $detalle['imagen'];
+                                            if (file_exists($imagenPath)) {
+                                                $imageExtension = strtolower(pathinfo($imagenPath, PATHINFO_EXTENSION));
+                                                $mimeType = 'image/' . ($imageExtension === 'jpg' ? 'jpeg' : $imageExtension);
+                                                $imagenData = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($imagenPath));
+                                            }
+                                        }
                                     ?>
                                     <tr>
                                         <td class="text-center" style="vertical-align: top; padding-top: 12px;"><?php echo $item_num++; ?></td>
                                         <td style="vertical-align: top; padding-top: 12px;">
                                             <strong style="font-size: 13px;"><?php echo htmlspecialchars($nombre); ?></strong>
+                                            <?php if ($imagenData): ?>
+                                            <br>
+                                            <img src="<?php echo $imagenData; ?>" alt="<?php echo htmlspecialchars($nombre); ?>" class="paquete-imagen">
+                                            <?php endif; ?>
                                             <?php if (!empty($descripcion)): ?>
                                             <br><br>
                                             <strong style="font-size: 11px;">Descripción:</strong><br>
@@ -478,7 +509,7 @@ class PDFGenerator {
                 <!-- Validez y Observaciones -->
                 <div class="validez">
                     <h4>VALIDEZ DE LA COTIZACIÓN</h4>
-                    <p>Esta cotización tiene una validez de 30 días calendario a partir de la fecha de emisión.</p>
+                    <p>Esta cotización tiene una validez de 15 días calendario a partir de la fecha de emisión.</p>
                 </div>
                 
                 <!-- Footer -->
@@ -487,20 +518,16 @@ class PDFGenerator {
                         <div>
                             <h4>TÉRMINOS Y CONDICIONES</h4>
                             <ul style="margin-left: 15px; margin-top: 5px;">
-                                <li>Los precios están sujetos a cambio sin previo aviso</li>
-                                <li>La validez de la cotización es limitada</li>
-                                <li>Se requiere confirmación por escrito para procesar pedidos</li>
-                                <li>Los tiempos de entrega pueden variar según disponibilidad</li>
+                                <li>Se requiere un anticipo $ 100.000 para reservar la fecha</li>
+                                <li>El saldo debe ser liquidado una vez termine el montaje</li>
+                                <li>Cualquier cambio o ajuste estará sujeto a disponibilidad y revisión.</li>
+                                <li>Precios no incluyen servicios adicionales no mencionados en esta cotización.</li>
+                                <li>Montaje y desmontaje incluidos.</li>
+                                <li>Transporte incluido dentro de Barranquilla y Soledad.
+                                        Para eventos fuera de estas zonas, el costo del traslado se coordina y acuerda según la ubicación.</li>
                             </ul>
                         </div>
-                        <div>
-                            <h4>INFORMACIÓN DE CONTACTO</h4>
-                            <p><strong>Generado:</strong> <?php echo date('d/m/Y H:i:s'); ?></p>
-                            <p><strong>Sistema:</strong> Cotizaciones Pidelo</p>
-                            <p style="margin-top: 10px; color: #007bff; font-weight: bold;">
-                                ¡Gracias por confiar en nosotros!
-                            </p>
-                        </div>
+
                     </div>
                 </div>
                 </div> <!-- Cierre de content-wrapper -->

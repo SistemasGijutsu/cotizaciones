@@ -23,8 +23,8 @@ class EmailSender {
         ];
         
         $this->empresa = [
-            'nombre' => 'Sistema de Cotizaciones Empresariales',
-            'telefono' => '+57 (1) 234-5678',
+            'nombre' => 'cotizaciónn Pidelo',
+            'telefono' => '+57 (310) 730-5924',
             'email' => 'info@cotizaciones.com',
             'web' => 'www.cotizaciones.com'
         ];

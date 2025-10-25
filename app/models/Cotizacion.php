@@ -189,9 +189,11 @@ class Cotizacion extends Model {
                            WHEN cd.tipo_item = 'paquete' THEN cd.descripcion_item
                            ELSE a.descripcion 
                        END as descripcion,
-                       a.stock
+                       a.stock,
+                       p.imagen as paquete_imagen
                 FROM cotizacion_detalle cd
                 LEFT JOIN articulos a ON cd.id_articulo = a.id
+                LEFT JOIN paquetes p ON cd.id_paquete = p.id AND cd.tipo_item = 'paquete'
                 WHERE cd.id_cotizacion = :cotizacion_id";
         
         $stmt = $this->query($sql, [':cotizacion_id' => $cotizacionId]);
