@@ -50,9 +50,18 @@ $errors = $errors ?? [];
                             <small class="text-muted">Opcional: describe los beneficios o características del paquete</small>
                         </div>
                         
-                        <div class="alert alert-info mb-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Nota:</strong> El precio de venta se define al agregar este paquete a una cotización.
+                        <div class="mb-3">
+                            <label for="precio_venta" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>
+                                Precio de Venta del Paquete
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio_venta" name="precio_venta" 
+                                       step="0.01" min="0" placeholder="0.00"
+                                       value="<?= isset($paquete['precio_venta']) ? htmlspecialchars($paquete['precio_venta']) : '' ?>">
+                            </div>
+                            <small class="text-muted">Define el precio de venta del paquete completo (Premium vs Básico)</small>
                         </div>
                         
                         <div class="mb-3">

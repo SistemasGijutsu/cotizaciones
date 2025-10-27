@@ -36,14 +36,13 @@ class Paquete extends Model {
      * Crear solo el paquete
      */
     private function createPaquete($data) {
-        // precio_venta es opcional a nivel de paquete: puede definirse al agregar a la cotización
+        // precio_venta ahora es obligatorio para paquetes con categorías (premium, básico)
         $sql = "INSERT INTO {$this->table} (nombre, descripcion, precio_venta, imagen) VALUES (:nombre, :descripcion, :precio_venta, :imagen)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':nombre' => $data['nombre'],
             ':descripcion' => $data['descripcion'],
-            // si no se proporciona, guardar NULL en lugar de 0 para distinguir "sin precio"
-            ':precio_venta' => array_key_exists('precio_venta', $data) ? $data['precio_venta'] : null,
+            ':precio_venta' => isset($data['precio_venta']) ? floatval($data['precio_venta']) : 0.00,
             ':imagen' => $data['imagen'] ?? null
         ]);
         return $this->db->lastInsertId();
@@ -78,7 +77,7 @@ class Paquete extends Model {
     }
     
     /**
-     * Calcular precio total del paquete (solo costo, venta viene del paquete)
+     * Calcular precio total del paquete basado en precio_venta del paquete
      */
     public function calcularPreciosPaquete($paqueteId) {
         $articulos = $this->getArticulosPaquete($paqueteId);
@@ -90,7 +89,8 @@ class Paquete extends Model {
             $totalCosto += $articulo['precio_costo'] * $articulo['cantidad'];
         }
         
-        $precioVenta = $paquete['precio_venta'] ?? 0;
+        // Usar precio_venta del paquete
+        $precioVenta = isset($paquete['precio_venta']) ? floatval($paquete['precio_venta']) : 0;
         $utilidad = $precioVenta - $totalCosto;
         $utilidadPorcentaje = $totalCosto > 0 ? ($utilidad / $totalCosto) * 100 : 0;
         
@@ -134,7 +134,15 @@ class Paquete extends Model {
         
         foreach ($paquetes as &$paquete) {
             $precios = $this->calcularPreciosPaquete($paquete['id']);
-            $paquete = array_merge($paquete, $precios);
+            $articulos = $this->getArticulosPaquete($paquete['id']);
+            
+            // Agregar información de precios y totales
+            $paquete['total_costo'] = $precios['total_costo'];
+            $paquete['precio_costo_total'] = $precios['total_costo'];
+            $paquete['precio_venta_total'] = $precios['precio_venta'];
+            $paquete['utilidad'] = $precios['utilidad'];
+            $paquete['utilidad_porcentaje'] = $precios['utilidad_porcentaje'];
+            $paquete['total_articulos'] = count($articulos);
         }
         
         return $paquetes;
@@ -162,9 +170,9 @@ class Paquete extends Model {
             $errors[] = "El nombre del paquete es obligatorio";
         }
         
-        // precio_venta ahora es opcional - se define al agregar a cotización
-        if (isset($data['precio_venta']) && $data['precio_venta'] < 0) {
-            $errors[] = "El precio de venta no puede ser negativo";
+        // precio_venta ahora es obligatorio
+        if (!isset($data['precio_venta']) || $data['precio_venta'] === '' || $data['precio_venta'] < 0) {
+            $errors[] = "El precio de venta es obligatorio y no puede ser negativo";
         }
         
         if (empty($articulos)) {

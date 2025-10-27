@@ -78,9 +78,18 @@ $articulosSeleccionados = $articulosSeleccionados ?? [];
                                             <small class="text-muted">Opcional: describe los beneficios o características del paquete</small>
                                         </div>
 
-                                        <div class="alert alert-info mb-3">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            <strong>Nota:</strong> El precio de venta se definirá al momento de agregar este paquete a una cotización.
+                                        <div class="mb-3">
+                                            <label for="precio_venta" class="form-label">
+                                                <i class="fas fa-dollar-sign me-1"></i>
+                                                Precio de Venta del Paquete
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="precio_venta" name="precio_venta" 
+                                                       step="0.01" min="0" placeholder="0.00"
+                                                       value="<?= isset($data['precio_venta']) ? htmlspecialchars($data['precio_venta']) : '' ?>">
+                                            </div>
+                                            <small class="text-muted">Define el precio de venta del paquete completo (Premium vs Básico)</small>
                                         </div>
 
                                         <div class="mb-3">
@@ -109,14 +118,23 @@ $articulosSeleccionados = $articulosSeleccionados ?? [];
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <div class="text-center">
-                                            <div class="h5 text-info mb-1" id="total-costo">$0.00</div>
-                                            <small class="text-muted">Costo Total de Artículos</small>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="text-muted">Costo Total:</small>
+                                                <div class="h6 text-danger mb-0" id="total-costo">$0.00</div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="text-muted">Precio Venta:</small>
+                                                <div class="h6 text-success mb-0" id="precio-venta-display">$0.00</div>
+                                            </div>
                                             <hr>
-                                            <p class="text-muted small mb-0">
-                                                <i class="fas fa-info-circle me-1"></i>
-                                                El precio de venta se definirá al agregar a la cotización
-                                            </p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Utilidad:</small>
+                                                <div class="h6 mb-0" id="utilidad-display">
+                                                    <span class="text-info">$0.00</span>
+                                                    <small class="text-muted" id="utilidad-porcentaje">(0%)</small>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -545,8 +563,29 @@ function actualizarTotales() {
         totalCosto += parseFloat(articulo.precio_costo) * parseInt(articulo.cantidad);
     });
     
+    // Obtener precio de venta del input
+    const precioVentaInput = document.getElementById('precio_venta');
+    const precioVenta = precioVentaInput ? parseFloat(precioVentaInput.value) || 0 : 0;
+    
+    // Calcular utilidad
+    const utilidad = precioVenta - totalCosto;
+    const utilidadPorcentaje = totalCosto > 0 ? (utilidad / totalCosto) * 100 : 0;
+    
+    // Actualizar displays
     $('#total-costo').text('$' + totalCosto.toFixed(2));
+    $('#precio-venta-display').text('$' + precioVenta.toFixed(2));
+    
+    const utilidadColor = utilidad >= 0 ? 'text-success' : 'text-danger';
+    $('#utilidad-display').html(
+        `<span class="${utilidadColor}">$${utilidad.toFixed(2)}</span> ` +
+        `<small class="text-muted" id="utilidad-porcentaje">(${utilidadPorcentaje.toFixed(1)}%)</small>`
+    );
 }
+
+// Escuchar cambios en el precio de venta
+$(document).ready(function() {
+    $('#precio_venta').on('input', actualizarTotales);
+});
 
 // Filtrar artículos en el modal
 $('#buscar-articulo').on('input', function() {

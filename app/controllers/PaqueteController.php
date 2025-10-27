@@ -35,8 +35,8 @@ class PaqueteController extends Controller
     {
         $paqueteData = $this->getPostData(['nombre', 'descripcion']);
         
-        // precio_venta es opcional ahora - se define al agregar a cotización
-        if (isset($_POST['precio_venta']) && !empty($_POST['precio_venta'])) {
+        // precio_venta ahora es obligatorio
+        if (isset($_POST['precio_venta']) && $_POST['precio_venta'] !== '') {
             $paqueteData['precio_venta'] = floatval($_POST['precio_venta']);
         }
 
@@ -146,8 +146,8 @@ class PaqueteController extends Controller
     {
         $data = $this->getPostData(['nombre', 'descripcion']);
         
-        // precio_venta es opcional
-        if (isset($_POST['precio_venta']) && !empty($_POST['precio_venta'])) {
+        // precio_venta ahora es obligatorio
+        if (isset($_POST['precio_venta']) && $_POST['precio_venta'] !== '') {
             $data['precio_venta'] = floatval($_POST['precio_venta']);
         }
         

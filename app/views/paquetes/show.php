@@ -100,15 +100,13 @@ $precios = $precios ?? ['total_costo' => 0, 'total_venta' => 0, 'utilidad' => 0,
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
-                        <?php $totalVenta = floatval($precios['total_venta'] ?? 0); ?>
+                        <?php 
+                        $precioVenta = isset($paquete['precio_venta']) ? floatval($paquete['precio_venta']) : 0; 
+                        ?>
                         <div class="h2 text-success">
-                            <?php if ($totalVenta > 0): ?>
-                                $<?= number_format($totalVenta, 2) ?>
-                            <?php else: ?>
-                                <span class="text-muted">—</span>
-                            <?php endif; ?>
+                            $<?= number_format($precioVenta, 2) ?>
                         </div>
-                        <small class="text-muted"><?php echo $totalVenta > 0 ? 'Precio Total del Paquete' : 'Precio no definido (se establecerá al crear la cotización)'; ?></small>
+                        <small class="text-muted">Precio de Venta del Paquete</small>
                     </div>
                     
                     <hr>
@@ -120,12 +118,16 @@ $precios = $precios ?? ['total_costo' => 0, 'total_venta' => 0, 'utilidad' => 0,
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Utilidad:</span>
-                        <strong class="text-success">$<?= number_format($precios['utilidad'] ?? 0, 2) ?></strong>
+                        <strong class="<?= ($precios['utilidad'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                            $<?= number_format($precios['utilidad'] ?? 0, 2) ?>
+                        </strong>
                     </div>
 
                     <div class="d-flex justify-content-between mb-3">
                         <span>Margen:</span>
-                        <strong class="text-info"><?= number_format($precios['utilidad_porcentaje'] ?? 0, 1) ?>%</strong>
+                        <strong class="<?= ($precios['utilidad_porcentaje'] ?? 0) >= 0 ? 'text-info' : 'text-danger' ?>">
+                            <?= number_format($precios['utilidad_porcentaje'] ?? 0, 1) ?>%
+                        </strong>
                     </div>
                     
                     <div class="d-grid gap-2">
